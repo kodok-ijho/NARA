@@ -1,0 +1,284 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ARTA",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "arta-webhook-001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-900, 300],
+      "webhookId": "ARTA"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action || $json.query.action }}",
+        "rules": {
+          "rules": [
+            { "value2": "get_data" },
+            { "value2": "add_transaction", "output": 1 },
+            { "value2": "delete_transaction", "output": 2 },
+            { "value2": "update_transaction", "output": 3 }
+          ]
+        }
+      },
+      "id": "arta-switch-001",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [-680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "arta_categories",
+        "filters": {
+          "conditions": [
+            { "keyName": "user_id", "keyValue": "={{ $('Webhook').item.json.body.user_id }}" }
+          ]
+        }
+      },
+      "id": "arta-check-cat-001",
+      "name": "Supabase: Check Categories",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-460, 100],
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.id }}", "operation": "isEmpty" }
+          ]
+        }
+      },
+      "id": "arta-need-seed-if-001",
+      "name": "Categories Exist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-240, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "const userId = $('Webhook').item.json.body.user_id;\nconst defaults = [\n  { name: 'Food & Drink', icon: '🍔', color: '#f59e0b', user_id: userId },\n  { name: 'Transport', icon: '🚗', color: '#3b82f6', user_id: userId },\n  { name: 'Shopping', icon: '🛍️', color: '#ec4899', user_id: userId },\n  { name: 'Entertainment', icon: '🎮', color: '#8b5cf6', user_id: userId },\n  { name: 'Health', icon: '💊', color: '#10b981', user_id: userId },\n  { name: 'Utilities', icon: '⚡', color: '#6b7280', user_id: userId }\n];\nreturn defaults.map(d => ({ json: d }));"
+      },
+      "id": "arta-gen-defaults-001",
+      "name": "Generate Defaults",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [-20, 0]
+    },
+    {
+      "parameters": {
+        "tableId": "arta_categories",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "user_id", "fieldValue": "={{ $json.user_id }}" },
+            { "fieldId": "name", "fieldValue": "={{ $json.name }}" },
+            { "fieldId": "icon", "fieldValue": "={{ $json.icon }}" },
+            { "fieldId": "color", "fieldValue": "={{ $json.color }}" }
+          ]
+        }
+      },
+      "id": "arta-seed-cat-001",
+      "name": "Supabase: Seed Categories",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [200, 0],
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { seeded: true } }];" },
+      "id": "arta-collapse-001",
+      "name": "Collapse Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [420, 0]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { proceed: true } }];" },
+      "id": "arta-proceed-001",
+      "name": "Proceed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [660, 100]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "arta_transactions",
+        "filters": {
+          "conditions": [
+            { "keyName": "user_id", "keyValue": "={{ $('Webhook').item.json.body.user_id }}" }
+          ]
+        },
+        "sort": {
+          "values": [ { "field": "date", "direction": "DESC" } ]
+        },
+        "limit": 100
+      },
+      "id": "arta-get-tx-001",
+      "name": "Supabase: Get Transactions",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [880, 100],
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "arta_categories",
+        "filters": {
+          "conditions": [
+            { "keyName": "user_id", "keyValue": "={{ $('Webhook').item.json.body.user_id }}" }
+          ]
+        }
+      },
+      "id": "arta-get-cat-final-001",
+      "name": "Supabase: Get Categories Final",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, 100],
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const txItems = $items(\"Supabase: Get Transactions\");\nconst catItems = $items(\"Supabase: Get Categories Final\");\n\nconst rawTransactions = txItems.filter(i => i.json.id).map(i => i.json);\nconst rawCategories = catItems.filter(i => i.json.id).map(i => i.json);\n\n// HARD DEDUPLICATION\nconst transactions = Array.from(new Map(rawTransactions.map(i => [i.id, i])).values());\nconst categories = Array.from(new Map(rawCategories.map(i => [i.id, i])).values());\n\nconst now = new Date();\nconst m = now.getMonth(), y = now.getFullYear();\nconst monthTx = transactions.filter(tx => {\n  const d = new Date(tx.date || tx.created_at);\n  return d.getMonth() === m && d.getFullYear() === y;\n});\n\nconst totalExpense = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\nconst totalIncome  = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\n\nreturn [{ json: {\n  success: true,\n  transactions,\n  categories,\n  summary: {\n    totalExpense,\n    totalIncome,\n    balance: totalIncome - totalExpense,\n    month: now.toLocaleString('default', { month: 'long', year: 'numeric' })\n  }\n}}];"
+      },
+      "id": "arta-build-response-001",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1320, 100]
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "arta-respond-get-data-001",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1540, 100]
+    },
+    {
+      "parameters": {
+        "tableId": "arta_transactions",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "user_id", "fieldValue": "={{ $('Webhook').item.json.body.user_id }}" },
+            { "fieldId": "category_id", "fieldValue": "={{ $('Webhook').item.json.body.data.category_id }}" },
+            { "fieldId": "title", "fieldValue": "={{ $('Webhook').item.json.body.data.title }}" },
+            { "fieldId": "amount", "fieldValue": "={{ $('Webhook').item.json.body.data.amount }}" },
+            { "fieldId": "type", "fieldValue": "={{ $('Webhook').item.json.body.data.type }}" },
+            { "fieldId": "note", "fieldValue": "={{ $('Webhook').item.json.body.data.note }}" },
+            { "fieldId": "date", "fieldValue": "={{ $('Webhook').item.json.body.data.date }}" }
+          ]
+        }
+      },
+      "id": "arta-create-tx-001",
+      "name": "Supabase: Create Transaction",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-460, 300],
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "arta-respond-add-001",
+      "name": "Respond Add",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "arta_transactions",
+        "filters": { "conditions": [ { "keyName": "id", "condition": "eq", "keyValue": "={{ $('Webhook').item.json.body.id }}" } ] }
+      },
+      "id": "arta-delete-tx-001",
+      "name": "Supabase: Delete Transaction",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-460, 480],
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "arta-respond-del-001",
+      "name": "Respond Del",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-240, 480]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "arta_transactions",
+        "id": "={{ $('Webhook').item.json.body.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "category_id", "fieldValue": "={{ $('Webhook').item.json.body.data.category_id }}" },
+            { "fieldId": "title", "fieldValue": "={{ $('Webhook').item.json.body.data.title }}" },
+            { "fieldId": "amount", "fieldValue": "={{ $json.body.data.amount }}" },
+            { "fieldId": "type", "fieldValue": "={{ $('Webhook').item.json.body.data.type }}" },
+            { "fieldId": "note", "fieldValue": "={{ $('Webhook').item.json.body.data.note }}" },
+            { "fieldId": "date", "fieldValue": "={{ $('Webhook').item.json.body.data.date }}" }
+          ]
+        }
+      },
+      "id": "arta-update-tx-001",
+      "name": "Supabase: Update Transaction",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-460, 660],
+      "credentials": { "supabaseApi": { "id": "xTHvppaIPCydn2CN", "name": "Supabase Account NARA" } }
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "arta-respond-update-001",
+      "name": "Respond Update",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-240, 660]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Switch Action", "type": "main", "index": 0 }]] },
+    "Switch Action": {
+      "main": [
+        [{ "node": "Supabase: Check Categories", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Create Transaction", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Delete Transaction", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Update Transaction", "type": "main", "index": 0 }]
+      ]
+    },
+    "Supabase: Check Categories": { "main": [[{ "node": "Categories Exist?", "type": "main", "index": 0 }]] },
+    "Categories Exist?": {
+      "main": [
+        [{ "node": "Generate Defaults", "type": "main", "index": 0 }],
+        [{ "node": "Proceed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Defaults": { "main": [[{ "node": "Supabase: Seed Categories", "type": "main", "index": 0 }]] },
+    "Supabase: Seed Categories": { "main": [[{ "node": "Collapse Items", "type": "main", "index": 0 }]] },
+    "Collapse Items": { "main": [[{ "node": "Proceed", "type": "main", "index": 0 }]] },
+    "Proceed": { "main": [[{ "node": "Supabase: Get Transactions", "type": "main", "index": 0 }]] },
+    "Supabase: Get Transactions": { "main": [[{ "node": "Supabase: Get Categories Final", "type": "main", "index": 0 }]] },
+    "Supabase: Get Categories Final": { "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]] },
+    "Build Response": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] },
+    "Supabase: Create Transaction": { "main": [[{ "node": "Respond Add", "type": "main", "index": 0 }]] },
+    "Supabase: Delete Transaction": { "main": [[{ "node": "Respond Del", "type": "main", "index": 0 }]] },
+    "Supabase: Update Transaction": { "main": [[{ "node": "Respond Update", "type": "main", "index": 0 }]] }
+  }
+}

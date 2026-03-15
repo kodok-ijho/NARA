@@ -1,0 +1,393 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "RAGA",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "96bdc8fd-da44-4d19-81be-9325b89f1fca",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-608, 1168],
+      "webhookId": "RAGA"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action || $json.query.action }}",
+        "rules": {
+          "rules": [
+            { "value2": "get_data" },
+            { "value2": "add_log", "output": 1 },
+            { "value2": "delete_log", "output": 2 },
+            { "value2": "upsert_biometrics", "output": 3 }
+          ]
+        }
+      },
+      "id": "9b8bbe2b-af4b-4fc3-90c1-f6f4207cec4e",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [-400, 1136]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "user_biometrics",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "f3abd156-4c63-4172-a264-0aeb1fcbb23e",
+      "name": "Supabase: Get Biometrics",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-176, 928],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "raga_logs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "a3664361-1174-4dab-bf24-d21d487ae7c7",
+      "name": "Supabase: Get Logs",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [48, 944],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "raga_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Webhook').item.json.body.user_id }}"
+            },
+            {
+              "fieldId": "meal_name",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.meal_name }}"
+            },
+            {
+              "fieldId": "calories",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.calories }}"
+            }
+          ]
+        }
+      },
+      "id": "d4060618-f2d9-4cb3-bee8-e002b309b1f1",
+      "name": "Supabase: Create Log",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-176, 1248],
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "raga_logs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.id }}"
+            }
+          ]
+        }
+      },
+      "id": "3f1f2dd0-55a4-4a25-89c7-79781250b0da",
+      "name": "Supabase: Delete Log",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-176, 1408],
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "user_biometrics",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "82780988-3ead-4e65-87ee-410b584733f0",
+      "name": "Supabase: Check Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-176, 1568],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.user_id }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "78bd2f6e-0cfc-477f-9544-2dfcd5ff0c2f",
+      "name": "Profile Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [48, 1568]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "user_biometrics",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "height_cm",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.height_cm }}"
+            },
+            {
+              "fieldId": "weight_kg",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.weight_kg }}"
+            },
+            {
+              "fieldId": "age",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.age }}"
+            },
+            {
+              "fieldId": "gender",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.gender }}"
+            },
+            {
+              "fieldId": "activity_level",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.activity_level }}"
+            },
+            {
+              "fieldId": "target_calories",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.target_calories }}"
+            }
+          ]
+        }
+      },
+      "id": "9e8a00b5-136b-4b39-b04d-de33659c7847",
+      "name": "Supabase: Update Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [272, 1488],
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "user_biometrics",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Webhook').item.json.body.user_id }}"
+            },
+            {
+              "fieldId": "height_cm",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.height_cm }}"
+            },
+            {
+              "fieldId": "weight_kg",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.weight_kg }}"
+            },
+            {
+              "fieldId": "age",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.age }}"
+            },
+            {
+              "fieldId": "gender",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.gender }}"
+            },
+            {
+              "fieldId": "activity_level",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.activity_level }}"
+            },
+            {
+              "fieldId": "target_calories",
+              "fieldValue": "={{ $('Webhook').item.json.body.data.target_calories }}"
+            }
+          ]
+        }
+      },
+      "id": "f2148dc7-0c46-4984-acac-f500640c18d7",
+      "name": "Supabase: Create Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [272, 1648],
+      "credentials": {
+        "supabaseApi": {
+          "id": "xTHvppaIPCydn2CN",
+          "name": "Supabase Account NARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "dce1f6af-806f-45ce-b071-47799925ac87",
+      "name": "Respond to Webhook 4",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [544, 1568]
+    },
+    {
+      "parameters": {
+        "jsCode": "// $input.all() = items dari Supabase: Get Logs (node sebelumnya)\nconst logsItems = $input.all();\n\n// Ambil data biometrics dari Supabase: Get Biometrics\nlet biometrics = {};\ntry {\n  const bioNode = $node[\"Supabase: Get Biometrics\"].json;\n  if (bioNode && bioNode.user_id) {\n    biometrics = bioNode;\n  }\n} catch(e) {\n  biometrics = {};\n}\n\n// Filter log items yang valid (punya id)\nconst logs = logsItems\n  .filter(item => item.json && item.json.id)\n  .map(item => item.json);\n\nreturn [{\n  json: {\n    success: true,\n    biometrics,\n    logs\n  }\n}];"
+      },
+      "id": "9e0282a3-fa07-4110-afe5-b27e92261fcb",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [288, 928]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "46d6e39a-0d0e-4258-89fc-0a5145a751f5",
+      "name": "Respond: get_data",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [528, 928]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d8d60671-17b8-4ee7-a6d9-e6dd08845b72",
+      "name": "Respond: add_log",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [176, 1216]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "aab86027-4e1b-4fb0-a717-9cee76d72f01",
+      "name": "Respond: delete_log",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [128, 1392]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Switch Action", "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [{ "node": "Supabase: Get Biometrics", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Create Log", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Delete Log", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Check Profile", "type": "main", "index": 0 }]
+      ]
+    },
+    "Supabase: Get Biometrics": {
+      "main": [[{ "node": "Supabase: Get Logs", "type": "main", "index": 0 }]]
+    },
+    "Supabase: Get Logs": {
+      "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]]
+    },
+    "Build Response": {
+      "main": [[{ "node": "Respond: get_data", "type": "main", "index": 0 }]]
+    },
+    "Supabase: Create Log": {
+      "main": [[{ "node": "Respond: add_log", "type": "main", "index": 0 }]]
+    },
+    "Supabase: Delete Log": {
+      "main": [[{ "node": "Respond: delete_log", "type": "main", "index": 0 }]]
+    },
+    "Supabase: Check Profile": {
+      "main": [[{ "node": "Profile Exists?", "type": "main", "index": 0 }]]
+    },
+    "Profile Exists?": {
+      "main": [
+        [{ "node": "Supabase: Update Profile", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Create Profile", "type": "main", "index": 0 }]
+      ]
+    },
+    "Supabase: Update Profile": {
+      "main": [[{ "node": "Respond to Webhook 4", "type": "main", "index": 0 }]]
+    },
+    "Supabase: Create Profile": {
+      "main": [[{ "node": "Respond to Webhook 4", "type": "main", "index": 0 }]]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ef75ee0bca18ca89abd161b41f155aae92e2990df5470118f5b45a611e2bf56"
+  }
+}

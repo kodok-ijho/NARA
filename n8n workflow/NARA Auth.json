@@ -1,0 +1,139 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nara-auth",
+        "responseMode": "onLastNode",
+        "options": {
+          "allowedOrigins": "*",
+          "respondToOptions": true
+        }
+      },
+      "id": "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        380,
+        240
+      ],
+      "webhookId": "nara-auth"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action || \"sync\" }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "register"
+            },
+            {
+              "value2": "sync",
+              "output": 1
+            }
+          ]
+        }
+      },
+      "id": "b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        600,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "profiles",
+        "data": "={{ $json.data }}",
+        "mappingMode": "defineBelow",
+        "valueMap": {
+          "value": [
+            {
+              "key": "id",
+              "value": "={{ $node[\"Webhook\"].json.body.user_id }}"
+            },
+            {
+              "key": "full_name",
+              "value": "={{ $node[\"Webhook\"].json.body.full_name }}"
+            },
+            {
+              "key": "email",
+              "value": "={{ $node[\"Webhook\"].json.body.email }}"
+            },
+            {
+              "key": "avatar_url",
+              "value": "={{ $node[\"Webhook\"].json.body.avatar_url }}"
+            }
+          ]
+        }
+      },
+      "id": "c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3",
+      "name": "Supabase: Create Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        820,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "table": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "key": "id",
+              "value": "={{ $node[\"Webhook\"].json.body.user_id }}"
+            }
+          ]
+        },
+        "alwaysOutputData": true
+      },
+      "id": "d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4",
+      "name": "Supabase: Get Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        820,
+        340
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Supabase: Create Profile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase: Get Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
