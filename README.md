@@ -1,6 +1,6 @@
 # 🌌 NARA Project: Personal Intelligent Companion
 
-![NARA Banner](https://raw.githubusercontent.com/[USER]/[REPO]/main/nara_project_banner.png)
+![NARA Banner](https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_project_banner.png)
 *(Note: Replace with the actual image path after pushing to GitHub or use the generated artifact)*
 
 > **Neural Automated Resource Agent (NARA)** is a high-performance personal orchestration platform designed to manage Health (RAGA) and Finance (ARTA) with a pure n8n-driven backend architecture.
