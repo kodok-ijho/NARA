@@ -1,106 +1,118 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_project_banner.png" alt="NARA Project Banner" width="100%">
+  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/main/nara_hero.png" alt="NARA Project Hero" width="100%">
 </p>
 
-<h1 align="center">🌠 NARA: The Neural Automated Resource Agent</h1>
+<h1 align="center">🌌 NARA: Neural Automated Resource Agent</h1>
 
 <p align="center">
-  <strong>Orchestrating Life with High-Performance Automation</strong>
+  <strong>The Ultimate Life Orchestration Engine. Built for Speed. Designed for Impact.</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Architecture-Orchestration-blueviolet?style=for-the-badge" alt="Architecture">
-  <img src="https://img.shields.io/badge/Powered%20By-n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n">
-  <img src="https://img.shields.io/badge/Frontend-React%2018-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
-  <img src="https://img.shields.io/badge/Backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+  <a href="https://github.com/kodok-ijho/NARA">
+    <img src="https://img.shields.io/badge/Status-BATTLE--TESTED-success?style=for-the-badge&logo=github" alt="Status">
+  </a>
+  <a href="https://n8n.io">
+    <img src="https://img.shields.io/badge/Powered%20By-n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n">
+  </a>
+  <a href="https://supabase.com">
+    <img src="https://img.shields.io/badge/Database-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+  </a>
 </p>
 
 ---
 
-## 💎 The Vision
+## 🇮🇩 Kenalkan NARA: Asisten Masa Depan Kamu
 
-NARA isn't just an app; it's a **Personal Control Center**. Designed for those who value speed, data integrity, and futuristic UI, NARA leverages the power of low-code orchestration (n8n) to handle complex logic while keeping the frontend remarkably lean and blazingly fast.
+NARA bukan sekadar aplikasi pencatat. NARA adalah sebuah **Orchestration Master** yang menghubungkan ritual kesehatan kamu (**RAGA**) dan manajemen finansial kamu (**ARTA**) ke dalam satu dashboard yang sangat "enteng" dan visualnya mewah.
 
----
-
-## 🏛️ Project Pillars
-
-### 🥗 RAGA (Health & Nutrition Rituals)
-> *Empowering your body through data.*
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_raga_card.png" alt="RAGA Feature Card" width="80%">
-</p>
-
-- **Biometric Intelligence**: Real-time TDEE and BMI calculations based on profile synchronization.
-- **Nutrition Orchestration**: Seamless meal logging with instant calorie summary feedback.
-- **Visual Targets**: Interactive weight target scales with precise labels and markers.
-
-### 💰 ARTA (Atur Rekap Transaksi Anda)
-> *Master your wealth, one byte at a time.*
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_arta_card.png" alt="ARTA Feature Card" width="80%">
-</p>
-
-- **Turbo Retrieval**: Parallel n8n fetching logic for sub-second financial history loading.
-- **Self-Healing Data**: Automatic schema seeding ensures a smooth Day-1 user experience.
-- **Analytics at a Glance**: Dynamic SVG charts providing deep insights into monthly spending.
+Built using a **Pure Webhook Architecture**, NARA menghapus kerumitan backend tradisional dan menggantinya dengan alur kerja n8n yang sangat fleksibel.
 
 ---
 
-## ⚙️ The Architecture of Tomorrow
+## 🚀 The Core Pillars
 
-NARA operates on a "Frontend-as-a-Shell" philosophy. Every major business logic decision is made within an **Orchestration Layer**, ensuring flexibility and rapid evolution.
+### 🥗 RAGA (Health Rituals)
+> *Because your metrics matter.*
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/main/nara_raga_card.png" alt="RAGA Card" width="48%">
+  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/main/nara_arta_card.png" alt="ARTA Card" width="48%">
+</p>
+
+#### **RAGA Features:**
+- **Smart BMI Scale**: Hitung BMI & TDEE secara otomatis dari profil kamu.
+- **Ritual Tracking**: Log makanan dan aktivitas dengan sinkronisasi n8n.
+- **Contextual Insights**: NARA AI siap memberitahu kapan kamu butuh istirahat atau nutrisi tambahan.
+
+#### **ARTA Features:**
+- **Lightning CRUD**: Operasi data finansial yang super cepat (add, edit, delete).
+- **Auto-Seeding**: Baru pertama kali pakai? NARA otomatis siapkan kategori buat kamu.
+- **Spend Visualization**: Grafik pengeluaran yang tajam dan informatif.
+
+---
+
+## 🧠 Brain Structure (n8n Architecture)
+
+The logic is 100% decoupled from the UI. This means NARA is **future-proof**.
 
 ```mermaid
-graph LR
-    subgraph "Frontend Layer (The Experience)"
-        UI[React + Tailwind]
+graph TD
+    subgraph "Visual Experience"
+        React[React Core + Shadcn UI]
     end
 
-    subgraph "Orchestration Layer (The Brain)"
-        N8N{n8n Workflows}
+    subgraph "The Nervous System"
+        Auth[n8n: Auth Sync]
+        RAGA[n8n: Health Engine]
+        ARTA[n8n: Finance Engine]
     end
 
-    subgraph "Data Layer (The Memory)"
-        SUPA[(Supabase)]
+    subgraph "The Global Memory"
+        DB[(Supabase)]
     end
 
-    UI <== JSON / Webhooks ==> N8N
-    N8N <== REST API ==> SUPA
-    
-    style N8N fill:#FF6D5A,stroke:#333,stroke-width:2px,color:#fff
-    style UI fill:#61DAFB,stroke:#333,stroke-width:2px,color:#000
-    style SUPA fill:#3ECF8E,stroke:#333,stroke-width:2px,color:#fff
+    React <== "JSON Webhooks" ==> Auth
+    React <== "JSON Webhooks" ==> RAGA
+    React <== "JSON Webhooks" ==> ARTA
+
+    Auth <== "REST" ==> DB
+    RAGA <== "REST" ==> DB
+    ARTA <== "REST" ==> DB
+
+    style Auth fill:#FF6D5A,stroke:#333,color:#fff
+    style RAGA fill:#FF6D5A,stroke:#333,color:#fff
+    style ARTA fill:#FF6D5A,stroke:#333,color:#fff
+    style React fill:#61DAFB,stroke:#333,color:#000
+    style DB fill:#3ECF8E,stroke:#333,color:#fff
 ```
 
 ---
 
-## 🛠️ Quick Start
+## 🛠️ Deployment in 2 Minutes
 
-### Frontend
+### 1. The Shell (Frontend)
 ```bash
-cd nara-app
-npm install && npm run dev
+git clone https://github.com/kodok-ijho/NARA.git
+cd nara-app && npm install && npm run dev
 ```
 
-### Backend (Orchestration)
-1. Import all `.json` blueprints from `/n8n workflow`.
-2. Map your Supabase Credentials to `NARA Auth`, `NARA RAGA`, and `NARA ARTA`.
-3. Activate Webhooks.
+### 2. The Soul (n8n)
+- Import workflows from `/n8n workflow`.
+- Hubungkan instance n8n kamu ke Supabase.
+- Masukkan URL webhook ke file `.env` kamu.
 
 ---
 
-## ⚡ Next Frontiers
-- [ ] **MASA**: The Productivity & Agenda Pillar.
-- [ ] **WhatsApp Integration**: Chat-to-Action via LLM-powered n8n nodes.
-- [ ] **Voice Control**: Voice-activated dashboard commands.
+## 🔮 Roadmap: What's Next?
+- [ ] **MASA**: Agenda & Productivity management.
+- [ ] **LLM Integration**: Chat with NARA via WhatsApp using Gemini/GPT.
+- [ ] **Voice Command**: Control your dashboard with voice triggers.
 
 ---
 
 <p align="center">
-  Created with ❤️ by <strong>kodok-ijho</strong>
+  <strong>Dibuat dengan ❤️ untuk masa depan yang lebih teratur.</strong>
   <br>
-  Built on the principles of <strong>Speed, Aesthetic, and Automation.</strong>
+  <em>Designed & Engineered by <a href="https://github.com/kodok-ijho">kodok-ijho</a></em>
 </p>
