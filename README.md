@@ -1,89 +1,106 @@
-# 🌌 NARA Project: Personal Intelligent Companion
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_project_banner.png" alt="NARA Project Banner" width="100%">
+</p>
 
-![NARA Banner](https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_project_banner.png)
-*(Note: Replace with the actual image path after pushing to GitHub or use the generated artifact)*
+<h1 align="center">🌠 NARA: The Neural Automated Resource Agent</h1>
 
-> **Neural Automated Resource Agent (NARA)** is a high-performance personal orchestration platform designed to manage Health (RAGA) and Finance (ARTA) with a pure n8n-driven backend architecture.
+<p align="center">
+  <strong>Orchestrating Life with High-Performance Automation</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Architecture-Orchestration-blueviolet?style=for-the-badge" alt="Architecture">
+  <img src="https://img.shields.io/badge/Powered%20By-n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n">
+  <img src="https://img.shields.io/badge/Frontend-React%2018-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/Backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+</p>
 
 ---
 
-## 🚀 Key Features
+## 💎 The Vision
 
-### 🥗 RAGA (Health & Nutrition)
-- **Log Daily Activity**: Track meals, calories, and biometrics.
-- **Smart BMI Calculator**: Real-time BMI and TDEE calculation.
-- **Goal Tracking**: Set weight targets and monitor progress with interactive visual scales.
-- **AI-Ready**: Designed for contextual health insights.
+NARA isn't just an app; it's a **Personal Control Center**. Designed for those who value speed, data integrity, and futuristic UI, NARA leverages the power of low-code orchestration (n8n) to handle complex logic while keeping the frontend remarkably lean and blazingly fast.
+
+---
+
+## 🏛️ Project Pillars
+
+### 🥗 RAGA (Health & Nutrition Rituals)
+> *Empowering your body through data.*
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_raga_card.png" alt="RAGA Feature Card" width="80%">
+</p>
+
+- **Biometric Intelligence**: Real-time TDEE and BMI calculations based on profile synchronization.
+- **Nutrition Orchestration**: Seamless meal logging with instant calorie summary feedback.
+- **Visual Targets**: Interactive weight target scales with precise labels and markers.
 
 ### 💰 ARTA (Atur Rekap Transaksi Anda)
-- **Lightning Fast Transactions**: Optimized parallel n8n workflows for sub-second data retrieval.
-- **Visual Analytics**: Monthly spending summaries and category-based breakdowns.
-- **Self-Healing Schema**: Automatic category seeding for new users.
-- **Transaction Management**: Comprehensive CRUD operations for all financial records.
+> *Master your wealth, one byte at a time.*
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kodok-ijho/NARA/master/nara_arta_card.png" alt="ARTA Feature Card" width="80%">
+</p>
+
+- **Turbo Retrieval**: Parallel n8n fetching logic for sub-second financial history loading.
+- **Self-Healing Data**: Automatic schema seeding ensures a smooth Day-1 user experience.
+- **Analytics at a Glance**: Dynamic SVG charts providing deep insights into monthly spending.
 
 ---
 
-## 🏛️ System Architecture
+## ⚙️ The Architecture of Tomorrow
 
-NARA uses a modern **Orchestration Architecture** where the frontend is entirely decoupled from the business logic.
+NARA operates on a "Frontend-as-a-Shell" philosophy. Every major business logic decision is made within an **Orchestration Layer**, ensuring flexibility and rapid evolution.
 
 ```mermaid
-graph TD
-    A[React Terminal App] -- Webhook/JSON --> B[n8n Orchestrator]
-    B -- REST API --> C[Supabase DB/Auth]
-    C -- Real-time Data --> B
-    B -- Structured Response --> A
-```
+graph LR
+    subgraph "Frontend Layer (The Experience)"
+        UI[React + Tailwind]
+    end
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Shadcn UI, Framer Motion.
-- **Orchestrator**: n8n (Modular workflows).
-- **Backend & Auth**: Supabase.
+    subgraph "Orchestration Layer (The Brain)"
+        N8N{n8n Workflows}
+    end
+
+    subgraph "Data Layer (The Memory)"
+        SUPA[(Supabase)]
+    end
+
+    UI <== JSON / Webhooks ==> N8N
+    N8N <== REST API ==> SUPA
+    
+    style N8N fill:#FF6D5A,stroke:#333,stroke-width:2px,color:#fff
+    style UI fill:#61DAFB,stroke:#333,stroke-width:2px,color:#000
+    style SUPA fill:#3ECF8E,stroke:#333,stroke-width:2px,color:#fff
+```
 
 ---
 
-## 🛠️ Installation & Setup
+## 🛠️ Quick Start
 
-### 1. Prerequisite
-- Node.js (v18+)
-- Supabase Account
-- n8n instance (Self-hosted or Cloud)
-
-### 2. Frontend Setup
+### Frontend
 ```bash
 cd nara-app
-npm install
-npm run dev
+npm install && npm run dev
 ```
 
-### 3. n8n Configuration
-- Import `.json` workflows from the `/n8n workflow` folder into your n8n instance.
-- Configure Webhook URLs in your `.env` file.
-
-### 4. Environment Variables
-Create a `.env` file in the root directory:
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_key
-VITE_N8N_AUTH_WEBHOOK_URL=...
-VITE_N8N_RAGA_WEBHOOK_URL=...
-VITE_N8N_ARTA_WEBHOOK_URL=...
-```
+### Backend (Orchestration)
+1. Import all `.json` blueprints from `/n8n workflow`.
+2. Map your Supabase Credentials to `NARA Auth`, `NARA RAGA`, and `NARA ARTA`.
+3. Activate Webhooks.
 
 ---
 
-## 🗺️ Roadmap
-- [x] **Phase 1**: Core Auth & Google Integration.
-- [x] **Phase 2**: RAGA Health Pillar.
-- [x] **Phase 3**: ARTA Finance Pillar.
-- [ ] **Phase 4**: MASA (Agenda & Task Management).
-- [ ] **Phase 5**: WhatsApp AI Integration (LLM Context).
+## ⚡ Next Frontiers
+- [ ] **MASA**: The Productivity & Agenda Pillar.
+- [ ] **WhatsApp Integration**: Chat-to-Action via LLM-powered n8n nodes.
+- [ ] **Voice Control**: Voice-activated dashboard commands.
 
 ---
 
-## 🤝 Contribution
-NARA is built with a focus on **Visual Excellence** and **Speed**. Feel free to fork and submit PRs for new "Pillars".
-
----
-
-## 📄 License
-MIT License. Created with ❤️ by NARA Team.
+<p align="center">
+  Created with ❤️ by <strong>kodok-ijho</strong>
+  <br>
+  Built on the principles of <strong>Speed, Aesthetic, and Automation.</strong>
+</p>
