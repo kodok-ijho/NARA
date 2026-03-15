@@ -69,7 +69,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const userId = $('Webhook').item.json.body.user_id;\nconst defaults = [\n  { name: 'Food & Drink', icon: '🍔', color: '#f59e0b', user_id: userId },\n  { name: 'Transport', icon: '🚗', color: '#3b82f6', user_id: userId },\n  { name: 'Shopping', icon: '🛍️', color: '#ec4899', user_id: userId },\n  { name: 'Entertainment', icon: '🎮', color: '#8b5cf6', user_id: userId },\n  { name: 'Health', icon: '💊', color: '#10b981', user_id: userId },\n  { name: 'Utilities', icon: '⚡', color: '#6b7280', user_id: userId }\n];\nreturn defaults.map(d => ({ json: d }));"
+        "jsCode": "const userId = $('Webhook').item.json.body.user_id;\nconst defaults = [\n  { name: 'Food & Drink', icon: '🍔', color: '#f59e0b', user_id: userId, type: 'expense' },\n  { name: 'Transport', icon: '🚗', color: '#3b82f6', user_id: userId, type: 'expense' },\n  { name: 'Shopping', icon: '🛍️', color: '#ec4899', user_id: userId, type: 'expense' },\n  { name: 'Entertainment', icon: '🎮', color: '#8b5cf6', user_id: userId, type: 'expense' },\n  { name: 'Health', icon: '💊', color: '#10b981', user_id: userId, type: 'expense' },\n  { name: 'Utilities', icon: '⚡', color: '#6b7280', user_id: userId, type: 'expense' },\n  { name: 'Salary', icon: '💰', color: '#22c55e', user_id: userId, type: 'income' },\n  { name: 'Freelance', icon: '💻', color: '#10b981', user_id: userId, type: 'income' },\n  { name: 'Investment', icon: '📈', color: '#0ea5e9', user_id: userId, type: 'income' }\n];\nreturn defaults.map(d => ({ json: d }));"
       },
       "id": "arta-gen-defaults-001",
       "name": "Generate Defaults",
@@ -85,7 +85,8 @@
             { "fieldId": "user_id", "fieldValue": "={{ $json.user_id }}" },
             { "fieldId": "name", "fieldValue": "={{ $json.name }}" },
             { "fieldId": "icon", "fieldValue": "={{ $json.icon }}" },
-            { "fieldId": "color", "fieldValue": "={{ $json.color }}" }
+            { "fieldId": "color", "fieldValue": "={{ $json.color }}" },
+            { "fieldId": "type", "fieldValue": "={{ $json.type }}" }
           ]
         }
       },

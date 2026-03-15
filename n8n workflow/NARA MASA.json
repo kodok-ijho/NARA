@@ -1,0 +1,206 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "MASA",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "masa-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-900, 300],
+      "webhookId": "MASA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.action }}",
+              "value2": "get_data"
+            }
+          ]
+        }
+      },
+      "id": "masa-switch",
+      "name": "Action Switch",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-700, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://qujscfzzgofubclmizrx.supabase.co/rest/v1/masa_tasks?select=*&user_id=eq.{{ $node[\"Webhook\"].json.body.user_id }}&status=eq.pending",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "=Bearer {{ $node[\"Webhook\"].json.body.jwt || '' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-tasks",
+      "name": "Fetch Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [-500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://qujscfzzgofubclmizrx.supabase.co/rest/v1/masa_routines?select=*&user_id=eq.{{ $node[\"Webhook\"].json.body.user_id }}&is_active=eq.true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "=Bearer {{ $node[\"Webhook\"].json.body.jwt || '' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-routines",
+      "name": "Fetch Routines",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [-500, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $items(\"Fetch Tasks\").map(i => i.json);\nconst routines = $items(\"Fetch Routines\").map(i => i.json);\n\nreturn {\n  tasks,\n  routines\n};"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [-300, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "masa-respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-100, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://qujscfzzgofubclmizrx.supabase.co/rest/v1/masa_tasks?id=eq.{{ $node[\"Webhook\"].json.body.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"{{ $node[\"Webhook\"].json.body.status }}\"\n}",
+        "options": {}
+      },
+      "id": "update-task",
+      "name": "Update Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [-500, 600]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Action Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action Switch": {
+      "main": [
+        [
+          {
+            "node": "Fetch Tasks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Routines",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Tasks": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Routines": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
