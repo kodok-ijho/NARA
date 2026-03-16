@@ -6,8 +6,7 @@
     "enabled": true
   },
   "assets": {
-    "directory": "nara-app/dist",
-    "not_found_handling": "single-page-application"
+    "directory": "nara-app/dist"
   },
   "compatibility_flags": [
     "nodejs_compat"
