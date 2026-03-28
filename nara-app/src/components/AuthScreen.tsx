@@ -73,21 +73,16 @@ export function AuthScreen() {
             const syncResult = await response.json();
             const userData = Array.isArray(syncResult) ? syncResult[0] : syncResult;
 
-            // Jika login tapi n8n tidak menemukan profile (array kosong atau id null)
-            if (intent === "login" && (!userData || (!userData.id && !userData.user_id))) {
-                setStatusText("Sync Warning: Account profile not found in NARA.");
-                // Tetap lanjut tapi beri warning, atau bisa signOut jika ingin ketat
-                // Untuk sekarang kita biarkan lanjut agar user tidak terjebak
-                setTimeout(() => {
-                    navigate("/dashboard", { replace: true });
-                }, 1500);
-                return;
-            }
-
-            if (intent === "register") {
-                setStatusText("Registration complete! Welcome to NARA.");
+            // We now expect n8n to be idempotent and always return a profile
+            if (!userData || (!userData.id && !userData.user_id)) {
+                console.warn("Sync warning: Account profile could not be verified in NARA.");
+                setStatusText("Welcome to NARA! Initializing your workspace...");
             } else {
-                setStatusText("Login success! Welcome back to NARA.");
+                if (intent === "register") {
+                    setStatusText("Registration complete! Welcome to NARA.");
+                } else {
+                    setStatusText("Login success! Welcome back to NARA.");
+                }
             }
             
             setTimeout(() => {
@@ -95,20 +90,9 @@ export function AuthScreen() {
             }, 1000);
             
           } else {
-            console.error("N8n Sync Warning: Server responded with", response.status);
-            if (response.status === 400 || response.status === 500) {
-                 if (intent === "login") {
-                    setStatusText("Sync failed: Data could not be updated.");
-                 } else {
-                    setStatusText("Registration failed: Service unavailable.");
-                 }
-                 setTimeout(() => {
-                    navigate("/dashboard", { replace: true });
-                 }, 1500);
-            } else {
-                setStatusText("Welcome to NARA (Limited sync)");
-                setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
-            }
+            console.error("NARA Sync Warning: Server responded with", response.status);
+            setStatusText("Welcome to NARA (Limited sync)");
+            setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
           }
 
         } catch (error) {

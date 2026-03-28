@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
-import { User, Save, Activity, Ruler, Weight as WeightIcon } from "lucide-react";
+import { User, Save, Activity, Ruler, Weight as WeightIcon, Target, Info } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +39,8 @@ export function ProfileScreen() {
     weight: "",
     age: "",
     gender: "male",
-    activity: "1.2" // Sedentary factor
+    activity: "1.2", // Sedentary factor
+    weightGoal: ""
   });
 
   const [targetCalories, setTargetCalories] = useState<number>(2000);
@@ -58,7 +61,23 @@ export function ProfileScreen() {
       if (a > 0) {
         let bmr = (10 * w) + (6.25 * h) - (5 * a);
         bmr = bio.gender === "male" ? bmr + 5 : bmr - 161;
-        setTargetCalories(Math.round(bmr * act));
+        const tdee = Math.round(bmr * act);
+        
+        // Deficit/Surplus based on Target Weight
+        const wg = parseFloat(bio.weightGoal);
+        if (wg > 0) {
+            if (wg < w) {
+                // Weight Loss Deficit (approx 500kcal)
+                setTargetCalories(Math.max(1200, tdee - 500));
+            } else if (wg > w) {
+                // Weight Gain Surplus (approx 500kcal)
+                setTargetCalories(tdee + 500);
+            } else {
+                setTargetCalories(tdee);
+            }
+        } else {
+            setTargetCalories(tdee);
+        }
       }
     }
   }, [bio]);
@@ -66,6 +85,15 @@ export function ProfileScreen() {
   useEffect(() => {
     calculateHealth();
   }, [calculateHealth]);
+
+  const getBMICategory = (val: string) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return "N/A";
+    if (num < 18.5) return "Underweight";
+    if (num < 25) return "Healthy";
+    if (num < 30) return "Overweight";
+    return "Obese";
+  };
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -95,7 +123,8 @@ export function ProfileScreen() {
           weight: b.weight_kg?.toString() || "",
           age: b.age?.toString() || "",
           gender: b.gender || "male",
-          activity: b.activity_level?.toString() || "1.2"
+          activity: b.activity_level?.toString() || "1.2",
+          weightGoal: b.target_weight?.toString() || ""
         });
         if (b.target_calories) setTargetCalories(parseInt(b.target_calories));
       }
@@ -127,6 +156,7 @@ export function ProfileScreen() {
               age: parseInt(bio.age),
               gender: bio.gender,
               activity_level: parseFloat(bio.activity),
+              target_weight: parseFloat(bio.weightGoal),
               target_calories: targetCalories
             }
           })
@@ -214,7 +244,7 @@ export function ProfileScreen() {
                       />
                     </div>
                  </div>
-                 <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label className="text-zinc-400">Weight (kg)</Label>
                     <div className="relative">
                       <WeightIcon className="absolute left-3 top-2.5 w-4 h-4 text-zinc-600" />
@@ -226,6 +256,57 @@ export function ProfileScreen() {
                       />
                     </div>
                  </div>
+
+                 {/* VISUAL BMI INDICATOR */}
+                 <div className="md:col-span-2 p-6 rounded-2xl bg-zinc-950/50 border border-zinc-800 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                           <Activity className="w-4 h-4 text-amber-500" />
+                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Body Mass Index Analysis</span>
+                        </div>
+                        <span className={cn(
+                            "text-xs font-bold px-3 py-1 rounded-full",
+                            bmi !== "N/A" && parseFloat(bmi) >= 18.5 && parseFloat(bmi) < 25 
+                                ? "bg-emerald-500/10 text-emerald-500" 
+                                : "bg-amber-500/10 text-amber-500"
+                        )}>
+                            {bmi !== "N/A" ? getBMICategory(bmi) : "Awaiting Data"}
+                        </span>
+                    </div>
+                    
+                    <div className="flex items-end gap-3">
+                        <span className="text-5xl font-black text-white">{bmi}</span>
+                        <div className="pb-1">
+                            <p className="text-[10px] font-black uppercase text-zinc-500 tracking-tighter">Your Current Score</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="relative h-2 w-full bg-zinc-800 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-cyan-500/40 w-[14%]" title="Underweight" />
+                            <div className="h-full bg-emerald-500/40 w-[26%]" title="Healthy" />
+                            <div className="h-full bg-amber-500/40 w-[20%]" title="Overweight" />
+                            <div className="h-full bg-rose-500/40 w-[40%]" title="Obese" />
+                            
+                            {bmi !== "N/A" && (
+                            <motion.div 
+                                initial={{ left: 0 }}
+                                animate={{ left: `${Math.min(Math.max((parseFloat(bmi) - 15) / 25 * 100, 0), 100)}%` }}
+                                className="absolute top-0 bottom-0 w-1.5 bg-white shadow-[0_0_15px_white] z-10"
+                                transition={{ type: "spring", stiffness: 50, damping: 10 }}
+                            />
+                            )}
+                        </div>
+                        <div className="flex justify-between text-[8px] text-zinc-600 font-black uppercase tracking-widest px-1">
+                            <span>15.0</span>
+                            <span className="ml-[14%]">18.5</span>
+                            <span className="ml-[26%]">25.0</span>
+                            <span className="ml-[20%]">30.0</span>
+                            <span className="text-right">40.0</span>
+                        </div>
+                    </div>
+                 </div>
+
                  <div className="space-y-2">
                     <Label className="text-zinc-400">Age</Label>
                     <Input 
@@ -246,6 +327,19 @@ export function ProfileScreen() {
                         <SelectItem value="female">Female</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-zinc-400">Target Weight (kg)</Label>
+                    <div className="relative">
+                      <Target className="absolute left-3 top-2.5 w-4 h-4 text-zinc-600" />
+                      <Input 
+                        type="number"
+                        placeholder="e.g. 70"
+                        value={bio.weightGoal}
+                        onChange={(e) => setBio({...bio, weightGoal: e.target.value})}
+                        className="pl-10 bg-zinc-950 border-zinc-800 text-white" 
+                      />
+                    </div>
                  </div>
               </div>
 
@@ -284,6 +378,24 @@ export function ProfileScreen() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+              </div>
+
+              {/* METHODOLOGY EXPLANATION */}
+              <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
+                  <div className="flex items-center gap-2">
+                      <Info className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs font-black uppercase tracking-widest text-amber-500/80">NARA Calculation Methodology</span>
+                  </div>
+                  <div className="space-y-2">
+                      <p className="text-sm font-medium text-white leading-relaxed">
+                          Aplikasi NARA menggunakan metode <span className="text-amber-500 underline decoration-amber-500/30">Mifflin-St Jeor Equation</span> sebagai standar emas medis dalam menentukan target kalori harian.
+                      </p>
+                      <ul className="text-xs text-zinc-500 space-y-2 ml-4 list-disc">
+                          <li><span className="text-zinc-300 font-bold">BMR (Basal Metabolic Rate):</span> Kalori yang dibakar tubuh saat istirahat berdasarkan jenis kelamin, tinggi, berat, dan usia.</li>
+                          <li><span className="text-zinc-300 font-bold">TDEE (Total Daily Energy Expenditure):</span> Penyesuaian BMR berdasarkan level aktivitas fisik Anda (*Activity Level multiplier*).</li>
+                          <li><span className="text-zinc-300 font-bold">Weight Goal Adjustment:</span> NARA secara otomatis menambahkan surplus (+500 kcal) untuk target kenaikan berat badan, atau defisit (-500 kcal) untuk penurunan berat badan.</li>
+                      </ul>
+                  </div>
               </div>
             </CardContent>
           </Card>
