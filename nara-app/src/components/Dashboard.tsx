@@ -101,7 +101,9 @@ export function Dashboard() {
     },
     { 
       label: "Health Index", 
-      value: ragaData?.logs ? `${(ragaData.logs || []).reduce((acc: number, l: any) => acc + (l.calories || 0), 0)} kcal` : "0 kcal", 
+      value: ragaData?.logs ? `${(ragaData.logs || [])
+        .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
+        .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)} kcal` : "0 kcal", 
       icon: Target, 
       color: "text-emerald-400",
       subTitle: "Today's Intake"
@@ -309,7 +311,9 @@ export function Dashboard() {
                        <div>
                           <p className="text-xs text-muted-foreground mb-1">Current</p>
                           <p className="text-lg font-bold text-emerald-500">
-                             {(ragaData?.logs || []).reduce((acc: number, l: any) => acc + (l.calories || 0), 0)}
+                             {(ragaData?.logs || [])
+                                .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
+                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)}
                           </p>
                        </div>
                        <div className="w-px h-8 bg-border" />
@@ -326,7 +330,9 @@ export function Dashboard() {
                         <div className="h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
                            <motion.div 
                              initial={{ width: 0 }}
-                             animate={{ width: `${Math.min(100, (((ragaData?.logs || []).reduce((acc: number, l: any) => acc + (l.calories || 0), 0)) / (ragaData?.biometrics?.target_calories || 2000)) * 100)}%` }}
+                             animate={{ width: `${Math.min(100, (((ragaData?.logs || [])
+                                .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
+                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)) / (ragaData?.biometrics?.target_calories || 2000)) * 100)}%` }}
                              className="h-full bg-emerald-500 neon-border-glow"
                            />
                         </div>
