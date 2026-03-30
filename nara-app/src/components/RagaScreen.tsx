@@ -18,7 +18,8 @@ import {
   TrendingUp,
   ChevronRight,
   ChevronLeft,
-  Activity
+  Activity,
+  Loader2
 } from "lucide-react";
 import {
   BarChart,
@@ -478,6 +479,142 @@ export function RagaScreen() {
         </div>
       </motion.header>
 
+      {/* TOP ACTION BAR: LOG + ANALYSIS - NOW AT THE VERY TOP */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        {/* QUICK LOG FORM */}
+        <Card className="bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20 shadow-2xl overflow-hidden relative group/log">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover/log:bg-emerald-500/10 transition-all duration-700" />
+          <CardHeader>
+            <CardTitle className="text-xl font-black flex items-center gap-3">
+              <Plus className="w-6 h-6 text-emerald-500" />
+              Quick Nutrition Log
+            </CardTitle>
+            <CardDescription>Instant synchronization to your NARA profile.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAddLog} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 space-y-3">
+                  <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest px-1">Meal Discovery</Label>
+                  <div className="relative group/input">
+                    <Input
+                      placeholder="Lunch: Nasi Hainan..."
+                      value={mealName}
+                      onChange={(e) => setMealName(e.target.value)}
+                      className="bg-zinc-100/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all pr-14"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAIEstimate}
+                      disabled={!mealName.trim() || isEstimating}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-emerald-500/20 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 hover:bg-emerald-500/30 dark:hover:bg-emerald-500/20 border border-emerald-500/30 dark:border-emerald-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                      title={t('raga.ai_estimate_btn')}
+                    >
+                      <Sparkles className={`w-5 h-5 ${isEstimating ? "animate-pulse" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-3 relative">
+                  <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest px-1">{t('raga.kcal_placeholder')}</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      placeholder="---"
+                      value={calories}
+                      onChange={(e) => setCalories(e.target.value)}
+                      className={`bg-zinc-100/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all pl-12 ${isEstimating ? "animate-pulse border-emerald-500/50" : ""}`}
+                    />
+                    {isEstimating && (
+                      <div className="absolute inset-0 bg-emerald-500/5 rounded-2xl animate-pulse pointer-events-none" />
+                    )}
+                  </div>
+                  {isEstimating && (
+                    <p className="absolute -bottom-5 left-1 text-[8px] font-bold text-emerald-500 animate-bounce">
+                      {t('raga.ai_estimating')}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Log Timeline</Label>
+                    <button
+                      type="button"
+                      onClick={() => setLogDate(getLocalISOString(new Date()))}
+                      className="text-[8px] font-black text-emerald-500 uppercase hover:underline"
+                    >
+                      Reset to Now
+                    </button>
+                  </div>
+                  <Input
+                    type="datetime-local"
+                    value={logDate}
+                    max={getLocalISOString(new Date())}
+                    onChange={(e) => setLogDate(e.target.value)}
+                    className="bg-zinc-100/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-sm transition-all [color-scheme:light] dark:[color-scheme:dark] block w-full px-4"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                disabled={isAdding || !mealName || !calories}
+                className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg shadow-xl shadow-emerald-500/20 group transition-all"
+              >
+                {isAdding ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    Sync to NARA
+                    <Zap className="ml-2 w-5 h-5 group-hover:scale-125 transition-transform" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* DETAILED ANALYSIS - MOVED UP */}
+        <Card className="bg-card/40 border-white/5 backdrop-blur-xl flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Detailed Analysis</CardTitle>
+              <CardDescription>Trends based on your {reportPeriod} data.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-6 bg-white/5 rounded-3xl border border-white/5">
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Total</p>
+                <p className="text-2xl font-black text-white">{stats.total} <span className="text-xs font-normal text-muted-foreground">kcal</span></p>
+              </div>
+              <div className="space-y-1 sm:border-x border-white/10 sm:px-6">
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Daily Avg</p>
+                <p className="text-2xl font-black text-white">{stats.avg} <span className="text-xs font-normal text-muted-foreground">kcal</span></p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Peak</p>
+                <p className="text-2xl font-black text-white">{stats.max} <span className="text-xs font-normal text-muted-foreground">kcal</span></p>
+              </div>
+            </div>
+            
+            <div className="mt-8 p-6 bg-emerald-500/5 rounded-3xl border border-emerald-500/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/20 rounded-xl">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Nutrition Insight</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {totalCaloriesToday > (biometrics?.target_calories || 2000) 
+                      ? "You've exceeded your daily target. Consider a light dinner."
+                      : "You're on track with your calorie goals today. Keep it up!"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* MAIN OVERVIEW SECTION */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
@@ -762,6 +899,8 @@ export function RagaScreen() {
 
       {/* Right Column: List & Analysis */}
       <div className="lg:col-span-2 space-y-8">
+        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className={cn(
             "border-white/5 backdrop-blur-xl transition-colors duration-500",
@@ -853,119 +992,8 @@ export function RagaScreen() {
           </TooltipProvider>
         </div>
 
-        <Card className="bg-card/40 border-white/5 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">Detailed Analysis</CardTitle>
-              <CardDescription>Trends based on your {reportPeriod} data.</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-8 mb-8 p-6 bg-white/5 rounded-2xl border border-white/5">
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Total Calories</p>
-                <p className="text-2xl font-bold">{stats.total} <span className="text-xs font-normal text-muted-foreground">kcal</span></p>
-              </div>
-              <div className="space-y-1 border-x border-white/5 px-8">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Daily Avg</p>
-                <p className="text-2xl font-bold">{stats.avg} <span className="text-xs font-normal text-muted-foreground">kcal</span></p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Peak Intake</p>
-                <p className="text-2xl font-bold">{stats.max} <span className="text-xs font-normal text-muted-foreground">kcal</span></p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* QUICK LOG FORM - REDESIGNED */}
-          <Card className="bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20 shadow-2xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-black flex items-center gap-3">
-                <Plus className="w-6 h-6 text-emerald-500" />
-                Quick Nutrition Log
-              </CardTitle>
-              <CardDescription>Instant synchronization to your NARA profile.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddLog} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2 space-y-3">
-                    <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest px-1">Meal Discovery</Label>
-                    <div className="relative group/input">
-                      <Input
-                        placeholder="Lunch: Nasi Hainan..."
-                        value={mealName}
-                        onChange={(e) => setMealName(e.target.value)}
-                        className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all pr-12"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAIEstimate}
-                        disabled={!mealName.trim() || isEstimating}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                        title={t('raga.ai_estimate_btn')}
-                      >
-                        <Sparkles className={`w-5 h-5 ${isEstimating ? "animate-pulse" : ""}`} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-3 relative">
-                    <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest px-1">{t('raga.kcal_placeholder')}</Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="---"
-                        value={calories}
-                        onChange={(e) => setCalories(e.target.value)}
-                        className={`bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all pl-12 ${isEstimating ? "animate-pulse border-emerald-500/50" : ""}`}
-                      />
-                      {isEstimating && (
-                        <div className="absolute inset-0 bg-emerald-500/5 rounded-2xl animate-pulse pointer-events-none" />
-                      )}
-                    </div>
-                    {isEstimating && (
-                      <p className="absolute -bottom-5 left-1 text-[8px] font-bold text-emerald-500 animate-bounce">
-                        {t('raga.ai_estimating')}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                      <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Log Timeline</Label>
-                      <button
-                        type="button"
-                        onClick={() => setLogDate(getLocalISOString(new Date()))}
-                        className="text-[8px] font-black text-emerald-500 uppercase hover:underline"
-                      >
-                        Reset to Now
-                      </button>
-                    </div>
-                    <Input
-                      type="datetime-local"
-                      value={logDate}
-                      max={getLocalISOString(new Date())}
-                      onChange={(e) => setLogDate(e.target.value)}
-                      className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-sm transition-all [color-scheme:dark] block w-full px-4"
-                    />
-                  </div>
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isAdding}
-                  className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/25"
-                >
-                  {isAdding ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Syncing...
-                    </div>
-                  ) : "Create Log Entry"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
 
           {/* LOG HISTORY - CLEANER LIST */}
           <div className="space-y-6">

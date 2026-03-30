@@ -5,7 +5,7 @@ import { User, Save, Activity, Ruler, Weight as WeightIcon, Target, Info, Sun, M
 import { useLanguage } from "@/lib/i18n.tsx";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
