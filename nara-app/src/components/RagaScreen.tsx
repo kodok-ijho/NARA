@@ -42,6 +42,7 @@ interface RagaLog {
   meal_name: string;
   calories: number;
   logged_at: string;
+  logged_on?: string;
 }
 
 interface Biometrics {
@@ -65,6 +66,14 @@ export function RagaScreen() {
   const [mealName, setMealName] = useState("");
   const [calories, setCalories] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+
+  // Helper for datetime-local input (YYYY-MM-DDTHH:mm)
+  const getLocalISOString = (date: Date) => {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
+  const [logDate, setLogDate] = useState(getLocalISOString(new Date()));
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -108,10 +117,10 @@ export function RagaScreen() {
 
   // Filtering Logic
   const todayLogs = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toLocaleDateString("en-CA");
     return allLogs
-      .filter(log => log.logged_at.split("T")[0] === today)
-      .sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime());
+      .filter(log => (log.logged_on || log.logged_at).split(/[T ]/)[0] === todayStr)
+      .sort((a, b) => new Date(b.logged_on || b.logged_at).getTime() - new Date(a.logged_on || a.logged_at).getTime());
   }, [allLogs]);
 
   const totalCaloriesToday = useMemo(() => 
@@ -132,7 +141,11 @@ export function RagaScreen() {
         hours.forEach(hour => {
             const label = `${hour}:00`;
             const value = todayLogs
-                .filter(l => new Date(l.logged_at).getHours() === hour)
+                .filter(l => {
+                    const timePart = (l.logged_on || "").split(" ")[1] || "";
+                    const hourPart = parseInt(timePart.split(":")[0]);
+                    return hourPart === hour;
+                })
                 .reduce((s, l) => s + l.calories, 0);
             data.push({ name: label, value });
         });
@@ -143,7 +156,7 @@ export function RagaScreen() {
             const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
             const label = d.toLocaleDateString("id-ID", { weekday: "short" });
             const value = allLogs
-                .filter(l => new Date(l.logged_at).toLocaleDateString("en-CA") === dateStr)
+                .filter(l => (l.logged_on || l.logged_at).split(/[T ]/)[0] === dateStr)
                 .reduce((s, l) => s + l.calories, 0);
             data.push({ name: label, value, fullDate: dateStr });
         }
@@ -154,7 +167,7 @@ export function RagaScreen() {
             const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
             const label = d.getDate().toString();
             const value = allLogs
-                .filter(l => new Date(l.logged_at).toLocaleDateString("en-CA") === dateStr)
+                .filter(l => (l.logged_on || l.logged_at).split(/[T ]/)[0] === dateStr)
                 .reduce((s, l) => s + l.calories, 0);
             data.push({ name: label, value, fullDate: dateStr });
         }
@@ -173,6 +186,14 @@ export function RagaScreen() {
     e.preventDefault();
     if (!mealName || !calories) return;
 
+    // Future date validation
+    if (new Date(logDate) > new Date()) {
+      toast.error("Invalid Timeline", {
+        description: "You cannot log meals for future dates.",
+      });
+      return;
+    }
+
     setIsAdding(true);
     try {
       const response = await fetch(RAGA_WEBHOOK, {
@@ -184,6 +205,7 @@ export function RagaScreen() {
           data: {
             meal_name: mealName,
             calories: parseInt(calories),
+            logged_on: logDate.replace("T", " ") + ":00",
           }
         })
       });
@@ -194,6 +216,7 @@ export function RagaScreen() {
         });
         setMealName("");
         setCalories("");
+        setLogDate(getLocalISOString(new Date()));
         fetchData();
       } else {
         throw new Error("Webhook placement failed");
@@ -464,34 +487,43 @@ export function RagaScreen() {
           <CardContent>
             <form onSubmit={handleAddLog} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
+                <div className="md:col-span-2 space-y-3">
                     <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest px-1">Meal Discovery</Label>
-                    <div className="relative">
-                        <Input 
-                            placeholder="Lunch: Nasi Hainan..." 
-                            value={mealName}
-                            onChange={(e) => setMealName(e.target.value)}
-                            className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all"
-                        />
-                        <div className="absolute right-4 top-4 opacity-20">
-                            <Utensils className="w-6 h-6" />
-                        </div>
-                    </div>
+                    <Input 
+                        placeholder="Lunch: Nasi Hainan..." 
+                        value={mealName}
+                        onChange={(e) => setMealName(e.target.value)}
+                        className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all"
+                    />
                 </div>
                 <div className="space-y-3">
                     <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest px-1">Calorie Count</Label>
-                    <div className="relative">
-                        <Input 
-                            type="number"
-                            placeholder="650" 
-                            value={calories}
-                            onChange={(e) => setCalories(e.target.value)}
-                            className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all"
-                        />
-                        <div className="absolute right-4 top-4 opacity-20">
-                            <Zap className="w-6 h-6" />
-                        </div>
+                    <Input 
+                        type="number"
+                        placeholder="650" 
+                        value={calories}
+                        onChange={(e) => setCalories(e.target.value)}
+                        className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-lg transition-all"
+                    />
+                </div>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Log Timeline</Label>
+                        <button 
+                            type="button"
+                            onClick={() => setLogDate(getLocalISOString(new Date()))}
+                            className="text-[8px] font-black text-emerald-500 uppercase hover:underline"
+                        >
+                            Reset to Now
+                        </button>
                     </div>
+                    <Input 
+                        type="datetime-local"
+                        value={logDate}
+                        max={getLocalISOString(new Date())}
+                        onChange={(e) => setLogDate(e.target.value)}
+                        className="bg-white/5 border-white/5 h-14 rounded-2xl focus:ring-emerald-500/40 focus:border-emerald-500/40 text-sm transition-all [color-scheme:dark] block w-full px-4"
+                    />
                 </div>
               </div>
               <Button 
@@ -542,7 +574,7 @@ export function RagaScreen() {
                                     <div className="flex items-center gap-2 mt-1">
                                         <Calendar className="w-3 h-3 text-muted-foreground" />
                                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tighter">
-                                            {new Date(log.logged_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {(log.logged_on || "").split(" ")[1]?.substring(0, 5) || "--:--"}
                                         </p>
                                     </div>
                                 </div>
