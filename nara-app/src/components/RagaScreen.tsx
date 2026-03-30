@@ -323,9 +323,12 @@ export function RagaScreen() {
                     strokeWidth="14" 
                     strokeDasharray={596.6}
                     initial={{ strokeDashoffset: 596.6 }}
-                    animate={{ strokeDashoffset: 596.6 - (596.6 * progress) / 100 }}
+                    animate={{ 
+                        strokeDashoffset: 596.6 - (596.6 * Math.min(progress, 100)) / 100,
+                        color: totalCaloriesToday > target ? "#f43f5e" : "#10b981"
+                    }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="text-emerald-500 neon-glow"
+                    className="neon-glow"
                     strokeLinecap="round"
                   />
                 </svg>
@@ -333,7 +336,11 @@ export function RagaScreen() {
                   <motion.span 
                     key={totalCaloriesToday}
                     initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
+                    animate={{ 
+                        scale: totalCaloriesToday > target ? [1, 1.05, 1] : 1,
+                        color: totalCaloriesToday > target ? "#f43f5e" : "#ffffff"
+                    }}
+                    transition={{ duration: 2, repeat: totalCaloriesToday > target ? Infinity : 0 }}
                     className="text-5xl font-black tracking-tighter"
                   >
                     {totalCaloriesToday}

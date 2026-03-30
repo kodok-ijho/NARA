@@ -310,11 +310,21 @@ export function Dashboard() {
                        <div className="w-px h-8 bg-border" />
                        <div>
                           <p className="text-xs text-muted-foreground mb-1">Current</p>
-                          <p className="text-lg font-bold text-emerald-500">
+                          <motion.p 
+                             animate={
+                               (ragaData?.logs || [])
+                                 .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
+                                 .reduce((acc: number, l: any) => acc + (l.calories || 0), 0) > (ragaData?.biometrics?.target_calories || 2000)
+                                 ? { scale: [1, 1.05, 1], color: "#f43f5e" }
+                                 : { scale: 1, color: "#10b981" }
+                             }
+                             transition={{ duration: 2, repeat: Infinity }}
+                             className="text-lg font-bold"
+                          >
                              {(ragaData?.logs || [])
                                 .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
                                 .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)}
-                          </p>
+                          </motion.p>
                        </div>
                        <div className="w-px h-8 bg-border" />
                        <div>
@@ -330,10 +340,17 @@ export function Dashboard() {
                         <div className="h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
                            <motion.div 
                              initial={{ width: 0 }}
-                             animate={{ width: `${Math.min(100, (((ragaData?.logs || [])
+                             animate={{ 
+                               width: `${Math.min(100, (((ragaData?.logs || [])
                                 .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
-                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)) / (ragaData?.biometrics?.target_calories || 2000)) * 100)}%` }}
-                             className="h-full bg-emerald-500 neon-border-glow"
+                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)) / (ragaData?.biometrics?.target_calories || 2000)) * 100)}%`,
+                               backgroundColor: (ragaData?.logs || [])
+                                .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
+                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0) > (ragaData?.biometrics?.target_calories || 2000)
+                                ? "#f43f5e" 
+                                : "#10b981"
+                             }}
+                             className="h-full neon-border-glow"
                            />
                         </div>
                     </div>
