@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation, Link, useOutletContext } from "react-router-dom";
+import { useLanguage } from "@/lib/i18n.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 import { 
@@ -23,27 +24,12 @@ import { cn } from "@/lib/utils";
 
 export function DashboardLayout() {
   const { session } = useOutletContext<{ session: Session }>();
+  const { t } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem("nara-theme") || "classic");
-  const [mode, setMode] = useState(() => localStorage.getItem("nara-mode") || "dark");
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    
-    // Apply Mode (Light/Dark)
-    if (mode === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    
-    // Apply Style Theme (Classic/Neon)
-    root.setAttribute("data-theme", theme);
-    
-    localStorage.setItem("nara-theme", theme);
-    localStorage.setItem("nara-mode", mode);
-  }, [theme, mode]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -62,11 +48,11 @@ export function DashboardLayout() {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Utensils, label: "RAGA", path: "/dashboard/raga" },
-    { icon: Wallet, label: "ARTA", path: "/dashboard/arta" },
-    { icon: Calendar, label: "MASA", path: "/dashboard/masa" },
-    { icon: User, label: "Profile", path: "/dashboard/profile" },
+    { icon: LayoutDashboard, label: t('nav.dashboard'), path: "/dashboard" },
+    { icon: Utensils, label: t('nav.raga'), path: "/dashboard/raga" },
+    { icon: Wallet, label: t('nav.arta'), path: "/dashboard/arta" },
+    { icon: Calendar, label: t('nav.masa'), path: "/dashboard/masa" },
+    { icon: User, label: t('nav.profile'), path: "/dashboard/profile" },
   ];
 
   return (
@@ -114,41 +100,6 @@ export function DashboardLayout() {
             </nav>
 
             <div className="p-4 border-t border-border/50 bg-muted/30 space-y-4">
-              {/* Theme & Mode Selector (Integrated) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Appearance</span>
-                  <div className="flex gap-1">
-                    <button 
-                      onClick={() => setMode("light")}
-                      className={cn("p-1.5 rounded-md transition-all", mode === "light" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}
-                    >
-                      <Sun className="w-3 h-3" />
-                    </button>
-                    <button 
-                      onClick={() => setMode("dark")}
-                      className={cn("p-1.5 rounded-md transition-all", mode === "dark" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}
-                    >
-                      <Moon className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-1 px-1">
-                  <button
-                    onClick={() => setTheme("classic")}
-                    className={cn("text-[10px] py-1.5 rounded-lg border transition-all", theme === "classic" ? "bg-secondary border-primary/50 text-foreground font-bold" : "border-transparent text-muted-foreground hover:bg-accent")}
-                  >
-                    Classic
-                  </button>
-                  <button
-                    onClick={() => setTheme("neon")}
-                    className={cn("text-[10px] py-1.5 rounded-lg border transition-all flex items-center justify-center gap-1", theme === "neon" ? "bg-secondary border-primary/50 text-foreground font-bold" : "border-transparent text-muted-foreground hover:bg-accent")}
-                  >
-                    Neon <Sparkles className="w-2.5 h-2.5 text-purple-400" />
-                  </button>
-                </div>
-              </div>
 
               {/* User Profile Hook */}
               <div className="flex items-center gap-3 p-2 rounded-xl bg-card border border-border/50 shadow-sm">
@@ -168,7 +119,7 @@ export function DashboardLayout() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold truncate">{session.user.user_metadata?.full_name || session.user.email?.split('@')[0]}</p>
-                  <p className="text-[10px] text-muted-foreground truncate uppercase tracking-tighter">Verified Meta-User</p>
+                  <p className="text-[10px] text-muted-foreground truncate uppercase tracking-tighter">{t('common.role')}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -196,7 +147,7 @@ export function DashboardLayout() {
             )}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-lg text-muted-foreground w-64">
               <Search className="w-4 h-4" />
-              <span className="text-sm">Search everything...</span>
+              <span className="text-sm">{t('common.search')}</span>
             </div>
           </div>
 

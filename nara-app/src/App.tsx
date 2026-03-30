@@ -9,9 +9,12 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { Toaster } from "@/components/ui/sonner";
 
+import { LanguageProvider } from "./lib/i18n.tsx";
+
 function App() {
   return (
-    <BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
       <Toaster position="top-center" richColors />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -30,7 +33,8 @@ function App() {
         {/* Catch-all route to redirect unknown paths to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
 

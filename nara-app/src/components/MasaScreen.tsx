@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import { useLanguage } from "@/lib/i18n.tsx";
 import type { Session } from "@supabase/supabase-js";
 import { 
   Calendar, 
@@ -33,6 +34,7 @@ interface Routine {
 
 export function MasaScreen() {
   const { session } = useOutletContext<{ session: Session }>();
+  const { t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
 
@@ -110,10 +112,10 @@ export function MasaScreen() {
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">Agenda</h1>
+          <h1 className="text-4xl font-bold tracking-tight mb-2">{t('masa.agenda')}</h1>
           <p className="text-muted-foreground flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-500 neon-glow" />
-            Manage your tasks and daily rituals efficiently.
+            {t('masa.focus')}: Manage your tasks and daily rituals efficiently.
           </p>
         </div>
         <div className="flex gap-2">
@@ -130,14 +132,14 @@ export function MasaScreen() {
         {/* Today's Rituals (Routines) */}
         <div className="lg:col-span-1 space-y-6">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Today's Rituals</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t('masa.ritual')}</h3>
             <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{routines.length}</span>
           </div>
 
           <div className="space-y-4">
             {routines.length === 0 ? (
               <div className="p-8 border border-dashed border-border rounded-2xl text-center text-muted-foreground text-sm">
-                No rituals scheduled for today.
+                {t('masa.no_rituals')}
               </div>
             ) : (
               routines.map((routine) => (
@@ -165,19 +167,19 @@ export function MasaScreen() {
         {/* Tasks Section */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Pending Tasks</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t('masa.focus')}</h3>
             <div className="flex gap-4 text-xs">
               <span className="text-muted-foreground">Total: {tasks.length}</span>
-              <span className="text-green-500">Done: {tasks.filter(t => t.status === 'completed').length}</span>
+              <span className="text-green-500">{t('raga.success')}: {tasks.filter(t => t.status === 'completed').length}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
             {tasks.length === 0 ? (
               <div className="p-12 border border-dashed border-border rounded-3xl text-center">
-                <p className="text-muted-foreground mb-4 text-sm">All clear! No tasks for now.</p>
+                <p className="text-muted-foreground mb-4 text-sm">{t('masa.no_tasks')}</p>
                 <Button variant="ghost" className="text-xs gap-2 text-muted-foreground">
-                  <Plus className="w-4 h-4" /> Add your first task
+                  <Plus className="w-4 h-4" /> {t('common.add')}
                 </Button>
               </div>
             ) : (
@@ -214,11 +216,15 @@ export function MasaScreen() {
                       <div className="flex items-center gap-2 mt-1">
                         <Calendar className="w-3 h-3 text-muted-foreground" />
                         <span className="text-[10px] text-muted-foreground">
-                          {new Date(task.due_date).toLocaleDateString()}
+                          {new Date(task.due_date).toLocaleDateString(undefined, {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </span>
                         {task.priority === 'high' && (
                           <span className="flex items-center gap-1 text-[10px] text-red-400 font-medium ml-2">
-                            <AlertCircle className="w-3 h-3" /> Priority
+                            <AlertCircle className="w-3 h-3" /> {t('raga.penalty').charAt(0).toUpperCase() + t('raga.penalty').slice(1)}
                           </span>
                         )}
                       </div>

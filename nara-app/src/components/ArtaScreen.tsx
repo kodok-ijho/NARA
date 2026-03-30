@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
+import { useLanguage } from "@/lib/i18n.tsx";
 import type { Session } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -83,7 +84,8 @@ function formatCurrency(amount: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
+  if (!dateStr) return "N/A";
+  return new Date(dateStr).toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -97,6 +99,7 @@ const isValidUUID = (uuid: string) => {
 
 export function ArtaScreen() {
   const { session } = useOutletContext<{ session: Session }>();
+  const { t } = useLanguage();
   const user = session.user;
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -315,7 +318,7 @@ export function ArtaScreen() {
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <Wallet className="w-8 h-8 text-[var(--arta-accent)] neon-glow" />
-          ARTA Module
+          {t('arta.wealth')}
         </h1>
         <p className="text-muted-foreground italic">Atur Rekap Transaksi Anda • Pure n8n Orchestration Architecture.</p>
       </header>
@@ -325,7 +328,7 @@ export function ArtaScreen() {
         <Card className="bg-[var(--glass-bg)] border-[var(--glass-border)] backdrop-blur-[var(--glass-blur)]">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">This Month Expenses</p>
+              <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">{t('arta.spending')}</p>
               <div className="p-2 rounded-lg bg-red-500/10">
                 <TrendingDown className="w-4 h-4 text-red-400" />
               </div>
@@ -338,7 +341,7 @@ export function ArtaScreen() {
         <Card className="bg-[var(--glass-bg)] border-[var(--glass-border)] backdrop-blur-[var(--glass-blur)]">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">This Month Income</p>
+              <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">{t('arta.income')}</p>
               <div className="p-2 rounded-lg bg-emerald-500/10">
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
               </div>
@@ -351,7 +354,7 @@ export function ArtaScreen() {
         <Card className={`backdrop-blur-[var(--glass-blur)] border ${summary.balance >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"}`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Net Balance</p>
+              <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">{t('dash.net_balance')}</p>
               <div className={`p-2 rounded-lg ${summary.balance >= 0 ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
                 <Wallet className={`w-4 h-4 ${summary.balance >= 0 ? "text-emerald-400" : "text-red-400"}`} />
               </div>
@@ -372,7 +375,7 @@ export function ArtaScreen() {
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               {editingId ? <BarChart3 className="w-5 h-5 text-amber-400 neon-glow" /> : <Plus className="w-5 h-5 text-[var(--arta-accent)] neon-glow" />}
-              {editingId ? "Edit Transaction" : "Add Transaction"}
+              {editingId ? `${t('common.classic')} Edit` : t('common.add')}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               {editingId ? "Editing existing entry..." : "Direct n8n sync • Real-time reconciliation."}
@@ -496,29 +499,29 @@ export function ArtaScreen() {
                 }`}
               >
                 {isAdding 
-                  ? "Syncing to n8n..." 
-                  : editingId ? "Update Transaction" : "Commit Transaction"}
+                  ? t('common.saving') 
+                  : editingId ? t('common.save') : t('common.add')}
               </Button>
               
               {editingId && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setEditingId(null);
-                    setForm({
-                      title: "",
-                      amount: "",
-                      type: "expense",
-                      category_id: "",
-                      note: "",
-                      date: new Date().toISOString().split("T")[0],
-                    });
-                  }}
-                  className="w-full text-muted-foreground hover:text-foreground"
-                >
-                  Cancel Edit
-                </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingId(null);
+                      setForm({
+                        title: "",
+                        amount: "",
+                        type: "expense",
+                        category_id: "",
+                        note: "",
+                        date: new Date().toISOString().split("T")[0],
+                      });
+                    }}
+                    className="w-full text-muted-foreground hover:text-foreground"
+                  >
+                    {t('common.cancel')}
+                  </Button>
               )}
             </form>
           </CardContent>
@@ -528,7 +531,7 @@ export function ArtaScreen() {
         <Card className="lg:col-span-2 bg-transparent border-none shadow-none space-y-6">
           <div className="flex items-center gap-2 px-1">
             <BarChart3 className="w-5 h-5 text-primary/60" />
-            <h3 className="text-xl font-bold tracking-tight">Financial Dynamics</h3>
+            <h3 className="text-xl font-bold tracking-tight">{t('arta.details')}</h3>
           </div>
 
           <div className="space-y-6">
@@ -656,7 +659,7 @@ export function ArtaScreen() {
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
             <History className="w-5 h-5 text-muted-foreground" />
-            Transaction History
+            {t('arta.wealth')} {t('common.appearance').split(' ')[0]} History
           </h3>
 
           {/* Filter Tabs */}
@@ -681,7 +684,7 @@ export function ArtaScreen() {
           {Object.keys(grouped).length === 0 ? (
             <div className="py-12 text-center border-2 border-dashed border-zinc-800 rounded-2xl text-zinc-600 flex flex-col items-center gap-3">
               <Info className="w-8 h-8 opacity-20" />
-              <p className="text-sm font-medium">No transactions found.</p>
+              <p className="text-sm font-medium">{t('arta.no_data')}</p>
             </div>
           ) : (
             Object.entries(grouped)

@@ -1,4 +1,5 @@
 import { useOutletContext } from "react-router-dom";
+import { useLanguage } from "@/lib/i18n.tsx";
 import type { Session } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -19,6 +20,7 @@ import { Tag } from "lucide-react";
 
 export function Dashboard() {
   const { session } = useOutletContext<{ session: Session }>();
+  const { t } = useLanguage();
   const user = session.user;
   const fullName = user.user_metadata?.full_name || user.email;
 
@@ -91,29 +93,69 @@ export function Dashboard() {
   const maxArtaExpTotal = Math.max(...artaExpenseBreakdown.map(c => c.total), 1);
   const maxArtaIncTotal = Math.max(...artaIncomeBreakdown.map(c => c.total), 1);
 
+  // Gamification Logic for Dashboard
+  const { ragaTodayPoints, ragaRank } = useMemo(() => {
+    if (!ragaData?.logs || !ragaData?.biometrics) return { ragaTodayPoints: 0, ragaRank: "Novice" };
+    
+    const b = ragaData.biometrics;
+    const bmi = b.height_cm && b.weight_kg ? b.weight_kg / Math.pow(b.height_cm / 100, 2) : 22;
+    const targetKcal = parseInt(b.target_calories) || 2000;
+    const isLossMode = bmi > 24; 
+    const isGainMode = bmi < 19;
+
+    const calculatePoints = (dayLogs: any[]) => {
+        const total = dayLogs.reduce((s, l) => s + (l.calories || 0), 0);
+        if (total === 0) return 0;
+        if (isLossMode) return total <= targetKcal ? 100 : -Math.floor((total - targetKcal) / 10);
+        if (isGainMode) return total >= targetKcal ? 100 : -Math.floor((targetKcal - total) / 10);
+        return Math.abs(total - targetKcal) < 200 ? 100 : -Math.floor(Math.abs(total - targetKcal) / 20);
+    };
+
+    const todayStr = new Date().toLocaleDateString("en-CA");
+    const todayLogs = (ragaData.logs || []).filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === todayStr);
+    const ragaTodayPoints = calculatePoints(todayLogs);
+
+    // Monthly Rank calculation
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const daysMap: Record<string, any[]> = {};
+    (ragaData.logs || []).forEach((l: any) => {
+        const d = (l.logged_on || l.logged_at || "").split(/[T ]/)[0];
+        if (new Date(d) >= startOfMonth) {
+            if (!daysMap[d]) daysMap[d] = [];
+            daysMap[d].push(l);
+        }
+    });
+    const monthlyScore = Object.values(daysMap).reduce((acc, logs) => acc + calculatePoints(logs), 0);
+    
+    let ragaRank = "Novice";
+    if (monthlyScore > 3000) ragaRank = "Legendary";
+    else if (monthlyScore > 1500) ragaRank = "Master";
+    else if (monthlyScore > 500) ragaRank = "Disciplined";
+
+    return { ragaTodayPoints, ragaRank };
+  }, [ragaData]);
+
   const stats = [
     { 
-      label: "Wealth Status", 
+      label: t('dash.wealth'), 
       value: artaData?.summary?.balance != null ? `Rp ${artaData.summary.balance.toLocaleString()}` : (loading ? "..." : "Rp 0"), 
       icon: Wallet, 
       color: "text-violet-400",
-      subTitle: "Net Balance"
+      subTitle: t('dash.net_balance')
     },
     { 
-      label: "Health Index", 
-      value: ragaData?.logs ? `${(ragaData.logs || [])
-        .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
-        .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)} kcal` : "0 kcal", 
+      label: t('dash.health'), 
+      value: ragaRank, 
       icon: Target, 
       color: "text-emerald-400",
-      subTitle: "Today's Intake"
+      subTitle: `${ragaTodayPoints >= 0 ? "+" : ""}${ragaTodayPoints} ${t('dash.pts_today')}`
     },
     { 
-      label: "Agenda Load", 
+      label: t('dash.agenda'), 
       value: masaData?.tasks ? `${(masaData.tasks || []).filter((t: any) => t.status !== 'completed').length} Tasks` : "0 Tasks", 
       icon: CalendarCheck, 
       color: "text-blue-400",
-      subTitle: "Pending Actions"
+      subTitle: t('dash.pending_actions')
     },
   ];
 
@@ -162,8 +204,8 @@ export function Dashboard() {
               animate={{ y: 0, opacity: 1 }}
               className="mt-6 text-center"
             >
-              <h3 className="text-xl font-bold tracking-tighter">Synchronizing NARA</h3>
-              <p className="text-sm text-muted-foreground">Merging your Health, Wealth & Agenda...</p>
+              <h3 className="text-xl font-bold tracking-tighter">{t('dash.syncing')}</h3>
+              <p className="text-sm text-muted-foreground">{t('dash.aligning')}</p>
             </motion.div>
           </motion.div>
         )}
@@ -172,10 +214,10 @@ export function Dashboard() {
       <div className={cn("space-y-8 transition-all duration-500", loading && !artaData ? "opacity-20 blur-sm scale-[0.98]" : "opacity-100 blur-0 scale-100")}>
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {fullName?.split(" ")[0]}!
+            {t('dash.welcome')}, {fullName?.split(" ")[0]}!
           </h1>
           <p className="text-muted-foreground">
-            {loading ? "Aligning your digital ecosystem..." : "Everything looks balanced today. Health and wealth are on track."}
+            {loading ? t('dash.aligning') : t('dash.balanced')}
           </p>
         </header>
 
@@ -216,12 +258,12 @@ export function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-violet-500" /> ARTA Wealth
+                    <Wallet className="w-5 h-5 text-violet-500" /> {t('arta.wealth')}
                   </CardTitle>
-                  <CardDescription className="text-xs">Top spending & income sources.</CardDescription>
+                  <CardDescription className="text-xs">{t('dash.aligning')}</CardDescription>
                 </div>
                 <Link to="/dashboard/arta">
-                  <Button variant="ghost" size="sm" className="h-7 text-[10px] text-violet-500 hover:text-violet-400 hover:bg-violet-500/10 uppercase font-bold tracking-wider">Details</Button>
+                  <Button variant="ghost" size="sm" className="h-7 text-[10px] text-violet-500 hover:text-violet-400 hover:bg-violet-500/10 uppercase font-bold tracking-wider">{t('arta.details')}</Button>
                 </Link>
               </div>
             </CardHeader>
@@ -229,7 +271,7 @@ export function Dashboard() {
                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-8">
                   {/* EXPENSES SECTION */}
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black text-red-500/70 uppercase tracking-[0.2em]">Top Spending</p>
+                    <p className="text-[10px] font-black text-red-500/70 uppercase tracking-[0.2em]">{t('arta.spending')}</p>
                     {artaExpenseBreakdown.length > 0 ? (
                       artaExpenseBreakdown.map((cat: any, idx: number) => (
                         <div key={idx} className="space-y-1">
@@ -248,14 +290,14 @@ export function Dashboard() {
                     ) : (
                       <div className="py-4 text-center text-muted-foreground text-[10px] flex flex-col items-center gap-1 opacity-50">
                         <Tag className="w-4 h-4" />
-                        No expenses.
+                        {t('arta.no_data')}
                       </div>
                     )}
                   </div>
 
                   {/* INCOME SECTION */}
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-[0.2em]">Top Income</p>
+                    <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-[0.2em]">{t('arta.income')}</p>
                     {artaIncomeBreakdown.length > 0 ? (
                       artaIncomeBreakdown.map((cat: any, idx: number) => (
                         <div key={idx} className="space-y-1">
@@ -274,7 +316,7 @@ export function Dashboard() {
                     ) : (
                       <div className="py-4 text-center text-muted-foreground text-[10px] flex flex-col items-center gap-1 opacity-50">
                         <Tag className="w-4 h-4" />
-                        No income.
+                        {t('arta.no_data')}
                       </div>
                     )}
                   </div>
@@ -290,12 +332,12 @@ export function Dashboard() {
              <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-emerald-500" /> RAGA Health
+                    <Activity className="w-5 h-5 text-emerald-500" /> {t('raga.title')}
                   </CardTitle>
-                  <CardDescription className="text-xs">Calorie intake goal vs actual.</CardDescription>
+                  <CardDescription className="text-xs">{t('dash.syncing')}</CardDescription>
                 </div>
                 <Link to="/dashboard/raga">
-                  <Button variant="ghost" size="sm" className="text-xs text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10">Full Assessment</Button>
+                  <Button variant="ghost" size="sm" className="text-xs text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10">{t('profile.full_assessment')}</Button>
                 </Link>
               </div>
             </CardHeader>
@@ -304,12 +346,12 @@ export function Dashboard() {
                   <div className="space-y-6">
                     <div className="flex items-center justify-around text-center">
                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Target</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t('raga.target')}</p>
                           <p className="text-lg font-bold">{ragaData?.biometrics?.target_calories || 2000}</p>
                        </div>
                        <div className="w-px h-8 bg-border" />
                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Current</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t('raga.kcal_logged')}</p>
                           <motion.p 
                              animate={
                                (ragaData?.logs || [])
@@ -328,7 +370,7 @@ export function Dashboard() {
                        </div>
                        <div className="w-px h-8 bg-border" />
                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Weight</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t('profile.weight')}</p>
                           <p className="text-lg font-bold">{ragaData?.biometrics?.weight_kg || "--"} kg</p>
                        </div>
                     </div>
@@ -356,7 +398,7 @@ export function Dashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center text-muted-foreground text-sm">Update your biometrics in Profile to see health stats.</div>
+                  <div className="text-center text-muted-foreground text-sm">{t('profile.awaiting_biometrics')}</div>
                 )}
             </CardContent>
           </Card>
@@ -368,10 +410,10 @@ export function Dashboard() {
              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-500" /> MASA Agenda
+                    <Clock className="w-5 h-5 text-blue-500" /> {t('masa.agenda')}
                   </CardTitle>
                   <Link to="/dashboard/masa">
-                    <Button variant="ghost" size="sm" className="text-xs text-blue-500 hover:bg-blue-500/10">Open Agenda</Button>
+                    <Button variant="ghost" size="sm" className="text-xs text-blue-500 hover:bg-blue-500/10">{t('masa.open')}</Button>
                   </Link>
                 </div>
              </CardHeader>
@@ -379,7 +421,7 @@ export function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div className="space-y-3">
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <CalendarCheck className="w-3 h-3" /> Today's Focus
+                        <CalendarCheck className="w-3 h-3" /> {t('masa.focus')}
                       </p>
                       <div className="space-y-2">
                         {masaData?.tasks?.filter((t: any) => t.status !== 'completed').slice(0, 2).map((task: any, idx: number) => (
@@ -389,13 +431,13 @@ export function Dashboard() {
                           </div>
                         ))}
                         {(!masaData?.tasks || masaData.tasks.filter((t: any) => t.status !== 'completed').length === 0) && (
-                          <div className="text-sm text-muted-foreground italic">No pending tasks for today.</div>
+                          <div className="text-sm text-muted-foreground italic">{t('masa.no_tasks')}</div>
                         )}
                       </div>
                    </div>
                    <div className="space-y-3">
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Zap className="w-3 h-3 text-amber-500" /> Next Ritual
+                        <Zap className="w-3 h-3 text-amber-500" /> {t('masa.ritual')}
                       </p>
                       {masaData?.routines?.[0] ? (
                         <div className="p-4 bg-[var(--masa-accent)]/10 border border-[var(--masa-accent)]/20 rounded-2xl flex items-center gap-4">
@@ -408,7 +450,7 @@ export function Dashboard() {
                            </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-muted-foreground italic">No daily rituals defined yet.</div>
+                        <div className="text-sm text-muted-foreground italic">{t('masa.no_rituals')}</div>
                       )}
                    </div>
                 </div>
