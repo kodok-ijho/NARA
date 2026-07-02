@@ -31,7 +31,7 @@ import {
 
 const ARTA_WEBHOOK = import.meta.env.VITE_N8N_ARTA_WEBHOOK_URL;
 
-interface Category {
+export interface Category {
   id: string;
   name: string;
   color: string;
@@ -57,7 +57,7 @@ interface Summary {
   month: string;
 }
 
-const DEFAULT_CATEGORIES: Category[] = [
+export const DEFAULT_CATEGORIES: Category[] = [
   // Expenses
   { id: "food", name: "Food & Drink", color: "#f59e0b", icon: "🍔", type: "expense" },
   { id: "transport", name: "Transport", color: "#3b82f6", icon: "🚗", type: "expense" },
@@ -280,18 +280,6 @@ export function ArtaScreen() {
     return { name: "Other", color: "#94a3b8", icon: "📌", type: "expense" as const };
   };
 
-  const filteredTransactions = transactions.filter((tx) =>
-    filterType === "all" ? true : tx.type === filterType
-  );
-
-  // Group by date
-  const grouped = filteredTransactions.reduce<Record<string, Transaction[]>>((acc, tx) => {
-    const key = tx.date || tx.created_at?.split("T")[0] || "Unknown";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(tx);
-    return acc;
-  }, {});
-
   // Filter transactions for breakdown calculations using same logic
   const filteredForBreakdown = transactions.filter((tx) => {
     if (!tx.date && !tx.created_at) return false;
@@ -308,6 +296,18 @@ export function ArtaScreen() {
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     }
   });
+
+  const filteredTransactions = filteredForBreakdown.filter((tx) =>
+    filterType === "all" ? true : tx.type === filterType
+  );
+
+  // Group by date
+  const grouped = filteredTransactions.reduce<Record<string, Transaction[]>>((acc, tx) => {
+    const key = tx.date || tx.created_at?.split("T")[0] || "Unknown";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(tx);
+    return acc;
+  }, {});
 
   // Category spending chart data
   const expenseTotals = filteredForBreakdown
@@ -592,7 +592,7 @@ export function ArtaScreen() {
                          .sort(([, a], [, b]) => b - a)
                          .slice(0, 4) // Show top 4 in grid
                          .map(([catName, total]) => {
-                           const cat = categories.find((c) => c.name === catName) || DEFAULT_CATEGORIES[6];
+                           const cat = categories.find((c) => c.name === catName) || DEFAULT_CATEGORIES.find((c) => c.name === catName) || DEFAULT_CATEGORIES[11];
                            const pct = (total / maxIncTotal) * 100;
                            return (
                              <div key={catName} className="p-4 rounded-2xl bg-secondary/20 border border-border/10 space-y-2">
@@ -650,7 +650,7 @@ export function ArtaScreen() {
                          .sort(([, a], [, b]) => b - a)
                          .slice(0, 4) // Show top 4 in grid
                          .map(([catName, total]) => {
-                           const cat = categories.find((c) => c.name === catName) || DEFAULT_CATEGORIES[6];
+                           const cat = categories.find((c) => c.name === catName) || DEFAULT_CATEGORIES.find((c) => c.name === catName) || DEFAULT_CATEGORIES[6];
                            const pct = (total / maxExpTotal) * 100;
                            return (
                              <div key={catName} className="p-4 rounded-2xl bg-secondary/20 border border-border/10 space-y-2">

@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Tag } from "lucide-react";
+import { DEFAULT_CATEGORIES } from "./ArtaScreen";
 
 export function Dashboard() {
   const { session } = useOutletContext<{ session: Session }>();
@@ -101,10 +102,19 @@ export function Dashboard() {
       }
     };
     
+    const getCategoryById = (id: string | null) => {
+      if (!id) return { name: "Other", type: "expense" };
+      const fetched = artaData.categories.find((c: any) => c.id === id);
+      if (fetched) return fetched;
+      const fallback = DEFAULT_CATEGORIES.find(c => c.id === id);
+      if (fallback) return fallback;
+      return { name: "Other", type: "expense" };
+    };
+
     artaData.transactions.forEach((tx: any) => {
       if (!inRange(tx.date || tx.created_at)) return;
       
-      const cat = artaData.categories.find((c: any) => c.id === tx.category_id) || { name: "Other", type: "expense" };
+      const cat = getCategoryById(tx.category_id);
       const status = tx.type || "expense"; // Fallback to expense for legacy
       
       if (status === "expense") {
