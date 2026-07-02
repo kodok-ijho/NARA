@@ -128,10 +128,19 @@ export function ArtaScreen() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const start = localStorage.getItem("nara-arta-start-date") || "";
+      const end = localStorage.getItem("nara-arta-end-date") || "";
+      const payload = {
+        action: "get_data",
+        user_id: user.id,
+        ...(start && { start_date: start }),
+        ...(end && { end_date: end })
+      };
+
       const response = await fetch(ARTA_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "get_data", user_id: user.id }),
+        body: JSON.stringify(payload),
       });
 
       const text = await response.text();
@@ -283,8 +292,25 @@ export function ArtaScreen() {
     return acc;
   }, {});
 
+  // Filter transactions for breakdown calculations using same logic
+  const filteredForBreakdown = transactions.filter((tx) => {
+    if (!tx.date && !tx.created_at) return false;
+    const d = new Date(tx.date || tx.created_at);
+    const start = localStorage.getItem("nara-arta-start-date");
+    const end = localStorage.getItem("nara-arta-end-date");
+    
+    if (start || end) {
+      if (start && d < new Date(start)) return false;
+      if (end && d > new Date(end)) return false;
+      return true;
+    } else {
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+  });
+
   // Category spending chart data
-  const expenseTotals = transactions
+  const expenseTotals = filteredForBreakdown
     .filter((tx) => tx.type === "expense")
     .reduce<Record<string, number>>((acc, tx) => {
       const cat = getCategoryById(tx.category_id);
@@ -293,7 +319,7 @@ export function ArtaScreen() {
       return acc;
     }, {});
 
-  const incomeTotals = transactions
+  const incomeTotals = filteredForBreakdown
     .filter((tx) => tx.type === "income")
     .reduce<Record<string, number>>((acc, tx) => {
       const cat = getCategoryById(tx.category_id);

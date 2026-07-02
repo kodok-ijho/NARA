@@ -37,8 +37,17 @@ export function Dashboard() {
     const fetchAllData = async () => {
       setLoading(true);
       try {
+        const artaStart = localStorage.getItem("nara-arta-start-date") || "";
+        const artaEnd = localStorage.getItem("nara-arta-end-date") || "";
+        const artaPayload = {
+          action: "get_data",
+          user_id: user.id,
+          ...(artaStart && { start_date: artaStart }),
+          ...(artaEnd && { end_date: artaEnd })
+        };
+
         const [artaResRaw, ragaResRaw, masaResRaw] = await Promise.all([
-          fetch(ARTA_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get_data", user_id: user.id }) }).then(r => r.json()).catch(() => null),
+          fetch(ARTA_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(artaPayload) }).then(r => r.json()).catch(() => null),
           fetch(RAGA_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get_data", user_id: user.id }) }).then(r => r.json()).catch(() => null),
           fetch(MASA_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get_data", user_id: user.id }) }).then(r => r.json()).catch(() => null),
         ]);
@@ -71,7 +80,30 @@ export function Dashboard() {
     const expenseTotals: Record<string, { name: string, total: number }> = {};
     const incomeTotals: Record<string, { name: string, total: number }> = {};
     
+    // Parse range dates from local storage
+    const start = localStorage.getItem("nara-arta-start-date");
+    const end = localStorage.getItem("nara-arta-end-date");
+    
+    // Fallback to current month if no range is specified
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const inRange = (dateStr: string) => {
+      if (!dateStr) return true;
+      const d = new Date(dateStr);
+      if (start || end) {
+        if (start && d < new Date(start)) return false;
+        if (end && d > new Date(end)) return false;
+        return true;
+      } else {
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }
+    };
+    
     artaData.transactions.forEach((tx: any) => {
+      if (!inRange(tx.date || tx.created_at)) return;
+      
       const cat = artaData.categories.find((c: any) => c.id === tx.category_id) || { name: "Other", type: "expense" };
       const status = tx.type || "expense"; // Fallback to expense for legacy
       

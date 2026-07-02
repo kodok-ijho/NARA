@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
-import { User, Save, Activity, Ruler, Weight as WeightIcon, Target, Info, Sun, Moon, Sparkles, Globe, Palette } from "lucide-react";
+import { User, Save, Activity, Ruler, Weight as WeightIcon, Target, Info, Sun, Moon, Sparkles, Globe, Palette, Calendar } from "lucide-react";
 import { useLanguage } from "@/lib/i18n.tsx";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,13 @@ export function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("nara-theme") || "classic");
   const [mode, setMode] = useState(() => localStorage.getItem("nara-mode") || "dark");
+  const [startDate, setStartDate] = useState(() => localStorage.getItem("nara-arta-start-date") || "");
+  const [endDate, setEndDate] = useState(() => localStorage.getItem("nara-arta-end-date") || "");
+
+  useEffect(() => {
+    localStorage.setItem("nara-arta-start-date", startDate);
+    localStorage.setItem("nara-arta-end-date", endDate);
+  }, [startDate, endDate]);
   
   const [profile, setProfile] = useState({
     fullName: user.user_metadata?.full_name || "",
@@ -514,6 +521,50 @@ export function ProfileScreen() {
                       {t('common.neon')} <Sparkles className="w-4 h-4 text-purple-500" />
                     </button>
                   </div>
+                </div>
+
+                {/* Financial Date Range Filter */}
+                <div className="space-y-3 md:col-span-2 border-t border-border/50 pt-6 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-semibold">Financial Date Range (ARTA)</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Tentukan rentang tanggal untuk menyaring data keuangan di dasbor dan halaman ARTA. Biarkan kosong untuk menggunakan filter bulan berjalan secara otomatis.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Start Date</Label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-background/50 border-border text-foreground"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">End Date</Label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-background/50 border-border text-foreground"
+                      />
+                    </div>
+                  </div>
+                  {(startDate || endDate) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setStartDate("");
+                        setEndDate("");
+                      }}
+                      className="text-xs text-red-500 hover:text-red-400 hover:bg-red-500/10 h-8 px-2"
+                    >
+                      Clear Range (Reset to Monthly)
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
