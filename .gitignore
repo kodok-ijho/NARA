@@ -22,3 +22,6 @@ yarn-error.log*
 # system
 .DS_Store
 Thumbs.db
+
+# agent configuration & sensitive files
+.agents/mcp_config.json

@@ -125,7 +125,7 @@
         "sort": {
           "values": [ { "field": "date", "direction": "DESC" } ]
         },
-        "limit": 100
+        "limit": 10000
       },
       "id": "arta-get-tx-001",
       "name": "Supabase: Get Transactions",
@@ -155,7 +155,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const txItems = $items(\"Supabase: Get Transactions\");\nconst catItems = $items(\"Supabase: Get Categories Final\");\n\nconst rawTransactions = txItems.filter(i => i.json.id).map(i => i.json);\nconst rawCategories = catItems.filter(i => i.json.id).map(i => i.json);\n\n// HARD DEDUPLICATION\nconst transactions = Array.from(new Map(rawTransactions.map(i => [i.id, i])).values());\nconst categories = Array.from(new Map(rawCategories.map(i => [i.id, i])).values());\n\nconst now = new Date();\nconst m = now.getMonth(), y = now.getFullYear();\nconst monthTx = transactions.filter(tx => {\n  const d = new Date(tx.date || tx.created_at);\n  return d.getMonth() === m && d.getFullYear() === y;\n});\n\nconst totalExpense = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\nconst totalIncome  = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\n\nreturn [{ json: {\n  success: true,\n  transactions,\n  categories,\n  summary: {\n    totalExpense,\n    totalIncome,\n    balance: totalIncome - totalExpense,\n    month: now.toLocaleString('default', { month: 'long', year: 'numeric' })\n  }\n}}];"
+        "jsCode": "const txItems = $items(\"Supabase: Get Transactions\");\nconst catItems = $items(\"Supabase: Get Categories Final\");\n\nconst rawTransactions = txItems.filter(i => i.json.id).map(i => i.json);\nconst rawCategories = catItems.filter(i => i.json.id).map(i => i.json);\n\n// HARD DEDUPLICATION\nconst transactions = Array.from(new Map(rawTransactions.map(i => [i.id, i])).values());\nconst categories = Array.from(new Map(rawCategories.map(i => [i.id, i])).values());\n\nconst now = new Date();\nconst m = now.getMonth(), y = now.getFullYear();\nconst monthTx = transactions.filter(tx => {\n  const d = new Date(tx.date || tx.created_at);\n  return d.getMonth() === m && d.getFullYear() === y;\n});\n\nconst totalExpense = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\nconst totalIncome  = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\n\n// Calculate cumulative balance from ALL historical transactions\nconst allExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\nconst allIncome  = transactions.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);\n\nreturn [{ json: {\n  success: true,\n  transactions,\n  categories,\n  summary: {\n    totalExpense,\n    totalIncome,\n    balance: allIncome - allExpense,\n    month: now.toLocaleString('default', { month: 'long', year: 'numeric' })\n  }\n}}];"
       },
       "id": "arta-build-response-001",
       "name": "Build Response",
