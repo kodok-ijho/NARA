@@ -18,6 +18,8 @@ import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Tag } from "lucide-react";
 import { DEFAULT_CATEGORIES } from "./ArtaScreen";
+import { useFilters } from "../context/FilterContext";
+import { calculateBMI, calculatePointsForDay, getRankByScore } from "../lib/healthUtils";
 
 export function Dashboard() {
   const { session } = useOutletContext<{ session: Session }>();
@@ -25,6 +27,7 @@ export function Dashboard() {
   const user = session.user;
   const fullName = user.user_metadata?.full_name || user.email;
 
+  const { startDate, endDate } = useFilters();
   const [artaData, setArtaData] = useState<any>(null);
   const [ragaData, setRagaData] = useState<any>(null);
   const [masaData, setMasaData] = useState<any>(null);
@@ -38,13 +41,11 @@ export function Dashboard() {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const artaStart = localStorage.getItem("nara-arta-start-date") || "";
-        const artaEnd = localStorage.getItem("nara-arta-end-date") || "";
         const artaPayload = {
           action: "get_data",
           user_id: user.id,
-          ...(artaStart && { start_date: artaStart }),
-          ...(artaEnd && { end_date: artaEnd })
+          ...(startDate && { start_date: startDate }),
+          ...(endDate && { end_date: endDate })
         };
 
         const [artaResRaw, ragaResRaw, masaResRaw] = await Promise.all([
@@ -72,7 +73,7 @@ export function Dashboard() {
     };
 
     fetchAllData();
-  }, [user.id]);
+  }, [user.id, startDate, endDate]);
 
   // Calculate ARTA breakdowns locally for consistency
   const { artaExpenseBreakdown, artaIncomeBreakdown } = useMemo(() => {
@@ -136,26 +137,17 @@ export function Dashboard() {
   const maxArtaIncTotal = Math.max(...artaIncomeBreakdown.map(c => c.total), 1);
 
   // Gamification Logic for Dashboard
-  const { ragaTodayPoints, ragaRank } = useMemo(() => {
-    if (!ragaData?.logs || !ragaData?.biometrics) return { ragaTodayPoints: 0, ragaRank: "Novice" };
+  const { ragaTodayPoints, ragaRank, todayCalories } = useMemo(() => {
+    if (!ragaData?.logs || !ragaData?.biometrics) return { ragaTodayPoints: 0, ragaRank: "Novice", todayCalories: 0 };
     
     const b = ragaData.biometrics;
-    const bmi = b.height_cm && b.weight_kg ? b.weight_kg / Math.pow(b.height_cm / 100, 2) : 22;
+    const bmi = calculateBMI(parseFloat(b.weight_kg), parseFloat(b.height_cm));
     const targetKcal = parseInt(b.target_calories) || 2000;
-    const isLossMode = bmi > 24; 
-    const isGainMode = bmi < 19;
-
-    const calculatePoints = (dayLogs: any[]) => {
-        const total = dayLogs.reduce((s, l) => s + (l.calories || 0), 0);
-        if (total === 0) return 0;
-        if (isLossMode) return total <= targetKcal ? 100 : -Math.floor((total - targetKcal) / 10);
-        if (isGainMode) return total >= targetKcal ? 100 : -Math.floor((targetKcal - total) / 10);
-        return Math.abs(total - targetKcal) < 200 ? 100 : -Math.floor(Math.abs(total - targetKcal) / 20);
-    };
 
     const todayStr = new Date().toLocaleDateString("en-CA");
     const todayLogs = (ragaData.logs || []).filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === todayStr);
-    const ragaTodayPoints = calculatePoints(todayLogs);
+    const ragaTodayPoints = calculatePointsForDay(todayLogs, targetKcal, bmi);
+    const todayCalories = todayLogs.reduce((acc: number, l: any) => acc + (l.calories || 0), 0);
 
     // Monthly Rank calculation
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -167,14 +159,11 @@ export function Dashboard() {
             daysMap[d].push(l);
         }
     });
-    const monthlyScore = Object.values(daysMap).reduce((acc, logs) => acc + calculatePoints(logs), 0);
+    const monthlyScore = Object.values(daysMap).reduce((acc, logs) => acc + calculatePointsForDay(logs, targetKcal, bmi), 0);
     
-    let ragaRank = "Novice";
-    if (monthlyScore > 3000) ragaRank = "Legendary";
-    else if (monthlyScore > 1500) ragaRank = "Master";
-    else if (monthlyScore > 500) ragaRank = "Disciplined";
+    const ragaRank = getRankByScore(monthlyScore);
 
-    return { ragaTodayPoints, ragaRank };
+    return { ragaTodayPoints, ragaRank, todayCalories };
   }, [ragaData]);
 
   const stats = [
@@ -396,18 +385,14 @@ export function Dashboard() {
                           <p className="text-xs text-muted-foreground mb-1">{t('raga.kcal_logged')}</p>
                           <motion.p 
                              animate={
-                               (ragaData?.logs || [])
-                                 .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
-                                 .reduce((acc: number, l: any) => acc + (l.calories || 0), 0) > (ragaData?.biometrics?.target_calories || 2000)
+                               todayCalories > (ragaData?.biometrics?.target_calories || 2000)
                                  ? { scale: [1, 1.05, 1], color: "#f43f5e" }
                                  : { scale: 1, color: "#10b981" }
                              }
                              transition={{ duration: 2, repeat: Infinity }}
                              className="text-lg font-bold"
                           >
-                             {(ragaData?.logs || [])
-                                .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
-                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)}
+                             {todayCalories}
                           </motion.p>
                        </div>
                        <div className="w-px h-8 bg-border" />
@@ -425,12 +410,8 @@ export function Dashboard() {
                            <motion.div 
                              initial={{ width: 0 }}
                              animate={{ 
-                               width: `${Math.min(100, (((ragaData?.logs || [])
-                                .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
-                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0)) / (ragaData?.biometrics?.target_calories || 2000)) * 100)}%`,
-                               backgroundColor: (ragaData?.logs || [])
-                                .filter((l: any) => (l.logged_on || l.logged_at || "").split(/[T ]/)[0] === new Date().toLocaleDateString("en-CA"))
-                                .reduce((acc: number, l: any) => acc + (l.calories || 0), 0) > (ragaData?.biometrics?.target_calories || 2000)
+                               width: `${Math.min(100, (todayCalories / (ragaData?.biometrics?.target_calories || 2000)) * 100)}%`,
+                               backgroundColor: todayCalories > (ragaData?.biometrics?.target_calories || 2000)
                                 ? "#f43f5e" 
                                 : "#10b981"
                              }}

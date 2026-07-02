@@ -17,6 +17,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
+import { useFilters } from "../context/FilterContext";
+import { calculateBMI, getBMICategory as getBMICategoryShared } from "../lib/healthUtils";
 
 const RAGA_WEBHOOK = import.meta.env.VITE_N8N_RAGA_WEBHOOK_URL;
 
@@ -28,18 +31,12 @@ export function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("nara-theme") || "classic");
   const [mode, setMode] = useState(() => localStorage.getItem("nara-mode") || "dark");
-  const [startDate, setStartDate] = useState(() => localStorage.getItem("nara-arta-start-date") || "");
-  const [endDate, setEndDate] = useState(() => localStorage.getItem("nara-arta-end-date") || "");
-
-  useEffect(() => {
-    localStorage.setItem("nara-arta-start-date", startDate);
-    localStorage.setItem("nara-arta-end-date", endDate);
-  }, [startDate, endDate]);
+  const { startDate, endDate, setStartDate, setEndDate, clearRange } = useFilters();
   
   const [profile, setProfile] = useState({
     fullName: user.user_metadata?.full_name || "",
     email: user.email || "",
-    phone: "",
+    phone: user.user_metadata?.phone || "",
     institution: "",
     bio: "",
     location: ""
@@ -75,7 +72,7 @@ export function ProfileScreen() {
 
     if (h > 0 && w > 0) {
       // BMI
-      const bmiVal = (w / Math.pow(h / 100, 2)).toFixed(1);
+      const bmiVal = calculateBMI(w, h).toFixed(1);
       setBmi(bmiVal);
 
       // Mifflin-St Jeor BMR
@@ -110,10 +107,12 @@ export function ProfileScreen() {
   const getBMICategory = (val: string) => {
     const num = parseFloat(val);
     if (isNaN(num)) return t('profile.awaiting_data');
-    if (num < 18.5) return t('profile.underweight');
-    if (num < 25) return t('profile.healthy');
-    if (num < 30) return t('profile.overweight');
-    return t('profile.obese');
+    return getBMICategoryShared(num, (key) => {
+      if (key === 'raga.underweight') return t('profile.underweight');
+      if (key === 'raga.normal') return t('profile.healthy');
+      if (key === 'raga.overweight') return t('profile.overweight');
+      return t('profile.obese');
+    });
   };
 
   const loadData = useCallback(async () => {
@@ -165,6 +164,34 @@ export function ProfileScreen() {
       setIsLoading(true);
       
       try {
+        // 1. Update full_name and phone in Supabase Auth user_metadata (session sync)
+        const { error: authError } = await supabase.auth.updateUser({
+          data: { 
+            full_name: profile.fullName,
+            phone: profile.phone 
+          }
+        });
+        if (authError) throw authError;
+
+        // 2. Sync full_name and phone to profiles table
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ 
+            full_name: profile.fullName,
+            phone: profile.phone 
+          })
+          .eq("id", user.id);
+        
+        // Fallback: If profiles table doesn't have a phone column, just update full_name
+        if (profileError) {
+          console.warn("[Profile] Failed to update phone in profiles table, updating full_name only:", profileError);
+          await supabase
+            .from("profiles")
+            .update({ full_name: profile.fullName })
+            .eq("id", user.id);
+        }
+
+        // 3. Upsert Biometrics via Webhook
         const payload = {
           action: "upsert_biometrics",
           user_id: user.id,
@@ -556,10 +583,7 @@ export function ProfileScreen() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        setStartDate("");
-                        setEndDate("");
-                      }}
+                      onClick={clearRange}
                       className="text-xs text-red-500 hover:text-red-400 hover:bg-red-500/10 h-8 px-2"
                     >
                       Clear Range (Reset to Monthly)

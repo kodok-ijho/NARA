@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useFilters } from "../context/FilterContext";
 import {
   Select,
   SelectContent,
@@ -102,6 +103,7 @@ export function ArtaScreen() {
   const { t } = useLanguage();
   const user = session.user;
 
+  const { startDate, endDate } = useFilters();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [summary, setSummary] = useState<Summary>({
@@ -128,13 +130,11 @@ export function ArtaScreen() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const start = localStorage.getItem("nara-arta-start-date") || "";
-      const end = localStorage.getItem("nara-arta-end-date") || "";
       const payload = {
         action: "get_data",
         user_id: user.id,
-        ...(start && { start_date: start }),
-        ...(end && { end_date: end })
+        ...(startDate && { start_date: startDate }),
+        ...(endDate && { end_date: endDate })
       };
 
       const response = await fetch(ARTA_WEBHOOK, {
@@ -168,7 +168,7 @@ export function ArtaScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [user.id]);
+  }, [user.id, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
@@ -177,6 +177,14 @@ export function ArtaScreen() {
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.amount) return;
+
+    const amt = parseFloat(form.amount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error("Invalid Amount", {
+        description: "Please enter a positive number greater than 0."
+      });
+      return;
+    }
 
     setIsAdding(true);
     const action = editingId ? "update_transaction" : "add_transaction";
@@ -239,6 +247,7 @@ export function ArtaScreen() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this transaction?")) return;
     try {
       const response = await fetch(ARTA_WEBHOOK, {
         method: "POST",

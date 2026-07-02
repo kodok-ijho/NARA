@@ -11,17 +11,22 @@ import { Toaster } from "@/components/ui/sonner";
 
 import { LanguageProvider } from "./lib/i18n.tsx";
 
+import { FilterProvider } from "./context/FilterContext";
+
 function App() {
   return (
     <LanguageProvider>
       <BrowserRouter>
-      <Toaster position="top-center" richColors />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<AuthScreen />} />
         
         <Route element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
+          <Route element={
+            <FilterProvider>
+              <DashboardLayout />
+            </FilterProvider>
+          }>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/raga" element={<RagaScreen />} />
             <Route path="/dashboard/arta" element={<ArtaScreen />} />
@@ -33,6 +38,7 @@ function App() {
         {/* Catch-all route to redirect unknown paths to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      <Toaster position="top-center" richColors />
       </BrowserRouter>
     </LanguageProvider>
   );

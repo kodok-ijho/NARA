@@ -47,6 +47,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { calculateBMI, getBMICategory as getBMICategoryShared, calculatePointsForDay, getRankByScore } from "../lib/healthUtils";
+
 const RAGA_WEBHOOK = import.meta.env.VITE_N8N_RAGA_WEBHOOK_URL;
 
 interface RagaLog {
@@ -69,47 +71,13 @@ function useNutritionGamification(allLogs: RagaLog[], biometrics: Biometrics | n
   return useMemo(() => {
     if (!biometrics) return { monthlyScore: 0, todayPoints: 0, rank: "Novice", direction: "stable" };
 
-    const bmi = biometrics.height_cm && biometrics.weight_kg
-      ? biometrics.weight_kg / Math.pow(biometrics.height_cm / 100, 2)
-      : 22;
-
-    // Determine target direction based on BMI or Goal
-    // For now, let's assume BMI > 25 is 'loss' mode, BMI < 18.5 is 'gain' mode
-    // Or if we have a target weight, we could use that. Let's stick to BMI for now.
-    const isLossMode = bmi > 24;
-    const isGainMode = bmi < 19;
-
-    const calculatePointsForDay = (dayLogs: RagaLog[], targetKcal: number) => {
-      const total = dayLogs.reduce((s, l) => s + l.calories, 0);
-      if (total === 0) return 0;
-      if (targetKcal === 0) return 0;
-
-      let points = 0;
-      if (isLossMode) {
-        if (total <= targetKcal) {
-          points = 100;
-          if (Math.abs(total - targetKcal) < 100) points += 50; 
-        } else {
-          points = -Math.floor((total - targetKcal) / 10);
-        }
-      } else if (isGainMode) {
-        if (total >= targetKcal) {
-          points = 100;
-          if (Math.abs(total - targetKcal) < 100) points += 50;
-        } else {
-          points = -Math.floor((targetKcal - total) / 10);
-        }
-      } else {
-        if (Math.abs(total - targetKcal) < 200) points = 100;
-        else points = -Math.floor(Math.abs(total - targetKcal) / 20);
-      }
-      return points;
-    };
+    const bmi = calculateBMI(biometrics.weight_kg, biometrics.height_cm);
+    const targetKcal = biometrics.target_calories;
 
     // Calculate Today's Points
     const todayStr = new Date().toLocaleDateString("en-CA");
     const todayLogs = allLogs.filter(l => (l.logged_on || l.logged_at).split(/[T ]/)[0] === todayStr);
-    const todayPoints = calculatePointsForDay(todayLogs, biometrics.target_calories);
+    const todayPoints = calculatePointsForDay(todayLogs, targetKcal, bmi);
 
     // Calculate Monthly Total
     const now = new Date();
@@ -126,14 +94,11 @@ function useNutritionGamification(allLogs: RagaLog[], biometrics: Biometrics | n
     });
 
     const monthlyScore = Object.values(daysMap).reduce((acc, logs) =>
-      acc + calculatePointsForDay(logs, biometrics.target_calories), 0);
+      acc + calculatePointsForDay(logs, targetKcal, bmi), 0);
 
-    let rank = "Novice";
-    if (monthlyScore > 3000) rank = "Legendary Health";
-    else if (monthlyScore > 1500) rank = "Nutrition Master";
-    else if (monthlyScore > 500) rank = "Disciplined";
+    const rank = getRankByScore(monthlyScore);
 
-    return { monthlyScore, todayPoints, rank, calculatePointsForDay };
+    return { monthlyScore, todayPoints, rank, calculatePointsForDay: (logs: RagaLog[]) => calculatePointsForDay(logs, targetKcal, bmi) };
   }, [allLogs, biometrics]);
 }
 
@@ -335,6 +300,14 @@ export function RagaScreen() {
     e.preventDefault();
     if (!mealName || !calories) return;
 
+    const calVal = parseInt(calories);
+    if (isNaN(calVal) || calVal <= 0) {
+      toast.error("Invalid Calories", {
+        description: "Calories must be a positive number greater than 0.",
+      });
+      return;
+    }
+
     // Future date validation
     if (new Date(logDate) > new Date()) {
       toast.error("Invalid Timeline", {
@@ -380,6 +353,7 @@ export function RagaScreen() {
   };
 
   const deleteLog = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this meal log?")) return;
     try {
       const response = await fetch(RAGA_WEBHOOK, {
         method: "POST",
@@ -397,16 +371,18 @@ export function RagaScreen() {
   };
 
   const bmi = biometrics?.height_cm && biometrics?.weight_kg
-    ? (biometrics.weight_kg / Math.pow(biometrics.height_cm / 100, 2)).toFixed(1)
+    ? calculateBMI(biometrics.weight_kg, biometrics.height_cm).toFixed(1)
     : t('profile.awaiting_data');
 
   const getBMICategory = (val: string) => {
     const num = parseFloat(val);
     if (isNaN(num)) return t('profile.awaiting_data');
-    if (num < 18.5) return t('profile.underweight');
-    if (num < 25) return t('profile.healthy');
-    if (num < 30) return t('profile.overweight');
-    return t('profile.obese');
+    return getBMICategoryShared(num, (key) => {
+      if (key === 'raga.underweight') return t('profile.underweight');
+      if (key === 'raga.normal') return t('profile.healthy');
+      if (key === 'raga.overweight') return t('profile.overweight');
+      return t('profile.obese');
+    });
   };
 
   if (isLoading && allLogs.length === 0) {

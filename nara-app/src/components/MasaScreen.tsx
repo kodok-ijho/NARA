@@ -37,15 +37,18 @@ export function MasaScreen() {
   const { t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // n8n Webhook URL (To be filled by user or configured via .env)
   const MASA_WEBHOOK_URL = (import.meta as any).env.VITE_N8N_MASA_WEBHOOK_URL || "";
 
   const fetchData = async () => {
     if (!MASA_WEBHOOK_URL) {
+      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
       const response = await fetch(MASA_WEBHOOK_URL, {
         method: "POST",
@@ -62,12 +65,26 @@ export function MasaScreen() {
       }
     } catch (error) {
       console.error("Error fetching MASA data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, [session.user.id]);
+
+  const handleNewTask = () => {
+    toast.info("Task Creation via Webhook", {
+      description: "Direct task creation is being wired up to your n8n workflow. Create tasks in Supabase for now."
+    });
+  };
+
+  const handleManageRoutines = () => {
+    toast.info("Manage Routines", {
+      description: "Routine configuration can be adjusted in the supabase table 'masa_routines'."
+    });
+  };
 
   const toggleTaskStatus = async (task: Task) => {
     const newStatus = task.status === 'pending' ? 'completed' : 'pending';
@@ -107,6 +124,18 @@ export function MasaScreen() {
     );
   }
 
+  if (isLoading && tasks.length === 0 && routines.length === 0) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-20">
       {/* Header Area */}
@@ -119,10 +148,17 @@ export function MasaScreen() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl border-border bg-secondary/50 backdrop-blur-sm">
+          <Button 
+            variant="outline" 
+            className="rounded-xl border-border bg-secondary/50 backdrop-blur-sm"
+            onClick={handleManageRoutines}
+          >
             Manage Routines
           </Button>
-          <Button className="rounded-xl bg-[var(--masa-accent)] hover:opacity-90 transition-opacity gap-2 neon-border-glow">
+          <Button 
+            className="rounded-xl bg-[var(--masa-accent)] hover:opacity-90 transition-opacity gap-2 neon-border-glow"
+            onClick={handleNewTask}
+          >
             <Plus className="w-4 h-4 neon-glow" /> New Task
           </Button>
         </div>
