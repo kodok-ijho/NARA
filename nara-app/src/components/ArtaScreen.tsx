@@ -51,11 +51,21 @@ interface Transaction {
   created_at: string;
 }
 
+interface MonthlyReport {
+  month: string;
+  monthLabel: string;
+  income: number;
+  expense: number;
+  startBalance: number;
+  endBalance: number;
+}
+
 interface Summary {
   totalExpense: number;
   totalIncome: number;
   balance: number;
   month: string;
+  monthlyReports?: MonthlyReport[];
 }
 
 export const DEFAULT_CATEGORIES: Category[] = [
@@ -93,6 +103,20 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatMonthKey(monthKey: string, lang: string): string {
+  if (!monthKey) return "";
+  const parts = monthKey.split("-");
+  if (parts.length < 2) return monthKey;
+  const year = parseInt(parts[0]);
+  const month = parseInt(parts[1]);
+  if (isNaN(year) || isNaN(month)) return monthKey;
+  const date = new Date(year, month - 1, 1);
+  return date.toLocaleDateString(lang === "id" ? "id-ID" : "en-US", {
+    month: "long",
+    year: "numeric"
+  });
+}
+
 const isValidUUID = (uuid: string) => {
   const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return regex.test(uuid);
@@ -100,7 +124,7 @@ const isValidUUID = (uuid: string) => {
 
 export function ArtaScreen() {
   const { session } = useOutletContext<{ session: Session }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const user = session.user;
 
   const { startDate, endDate } = useFilters();
@@ -688,6 +712,61 @@ export function ArtaScreen() {
           </div>
         </Card>
       </div>
+
+      {/* MONTHLY HISTORY CARD */}
+      {summary.monthlyReports && summary.monthlyReports.length > 0 && (
+        <Card className="bg-[var(--glass-bg)] border-[var(--glass-border)] backdrop-blur-[var(--glass-blur)] rounded-3xl p-6 shadow-xl overflow-hidden">
+          <CardHeader className="px-0 pt-0 pb-4">
+            <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+              <BarChart3 className="w-5 h-5 text-[var(--arta-accent)]" />
+              {language === "en" ? "Monthly Performance History" : "Riwayat Kinerja Bulanan"}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-xs mt-1">
+              {language === "en" 
+                ? "Track your income, spending, and savings trends over previous months." 
+                : "Pantau tren pemasukan, pengeluaran, dan tabungan Anda dari bulan-bulan sebelumnya."}
+            </CardDescription>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/50 text-zinc-500 text-xs font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">{language === "en" ? "Month" : "Bulan"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Income" : "Pemasukan"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Expenses" : "Pengeluaran"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Net Savings" : "Selisih/Tabungan"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Ending Balance" : "Saldo Akhir"}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {summary.monthlyReports.map((report) => {
+                  const net = report.income - report.expense;
+                  return (
+                    <tr key={report.month} className="hover:bg-secondary/10 transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-foreground">
+                        {formatMonthKey(report.month, language)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-emerald-400 font-bold">
+                        {formatCurrency(report.income)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-zinc-300">
+                        {formatCurrency(report.expense)}
+                      </td>
+                      <td className={`py-3.5 px-4 text-right font-mono font-bold ${net >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {net >= 0 ? "+" : ""}
+                        {formatCurrency(net)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-muted-foreground">
+                        {formatCurrency(report.endBalance)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* TRANSACTION HISTORY */}
       <div className="space-y-4">
