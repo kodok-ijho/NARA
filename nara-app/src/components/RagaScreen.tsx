@@ -1055,7 +1055,7 @@ export function RagaScreen() {
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteLog(log.id)}
-                          className="opacity-0 group-hover:opacity-100 rounded-full hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+                          className="rounded-full hover:bg-rose-500/10 hover:text-rose-500 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

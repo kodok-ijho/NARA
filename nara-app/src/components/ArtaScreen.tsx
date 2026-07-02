@@ -732,7 +732,7 @@ export function ArtaScreen() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(tx)}
-                            className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-amber-500 transition-all"
+                            className="text-zinc-600 hover:text-amber-500 transition-all"
                           >
                             <BarChart3 className="w-4 h-4" />
                           </Button>
@@ -740,7 +740,7 @@ export function ArtaScreen() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(tx.id)}
-                            className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all"
+                            className="text-zinc-600 hover:text-red-500 transition-all"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

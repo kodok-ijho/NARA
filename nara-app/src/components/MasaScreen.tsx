@@ -231,7 +231,7 @@ export function MasaScreen() {
                     )}
                   </div>
 
-                  <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 rounded-full h-8 w-8 text-zinc-500">
+                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 text-zinc-500">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </motion.div>
